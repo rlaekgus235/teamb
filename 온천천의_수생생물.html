@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천의 수생생물</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #d94a3d; --leaf: #2e9e8f; --brand-brown: #4a2c15; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: #eef3ec;
+    color: #17324a;
+  }
+
+  /* ===== 상단 메뉴바 ===== */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 40px;
+  }
+  .topbar .brand {
+    color: var(--brand-brown); text-decoration: none;
+    font-family: "Noto Serif KR", serif;
+    font-size: 17px; letter-spacing: 4px; font-weight: 700;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6);
+  }
+  .topbar .brand .en {
+    display: block; font-size: 11px; letter-spacing: 3px;
+    opacity: 0.75; margin-top: 4px; font-family: sans-serif; font-weight: 400;
+  }
+  .nav-menu { display: flex; gap: 34px; }
+  .nav-menu a {
+    color: #fff; text-decoration: none;
+    font-family: "Noto Serif KR", serif; font-size: 15px; letter-spacing: 2px;
+    position: relative; padding: 4px 2px; opacity: 0.9;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.45); transition: opacity .25s;
+  }
+  .nav-menu a::after {
+    content: ""; position: absolute; left: 0; bottom: -3px;
+    width: 0; height: 2px; background: var(--accent); transition: width .3s ease;
+  }
+  .nav-menu a:hover { opacity: 1; }
+  .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+
+  /* ===== 자연 타이틀 헤더 ===== */
+  .page-hero {
+    position: relative; height: 440px; min-height: 380px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-family: "Noto Serif KR", serif;
+  }
+  .ph-bg {
+    position: absolute; inset: 0;
+    background: url("images/oncheon-header.jpg") center 40%/cover no-repeat;
+    transform: scale(1.05);
+    animation: phZoom 18s ease-out forwards;
+  }
+  @keyframes phZoom { from { transform: scale(1.12); } to { transform: scale(1.02); } }
+  .ph-overlay {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to bottom,
+        rgba(20,52,42,0.55) 0%,
+        rgba(22,58,44,0.42) 40%,
+        rgba(16,40,32,0.72) 100%);
+  }
+  .ph-content { position: relative; z-index: 3; color: #fff; padding: 40px 24px 0; }
+  .ph-kicker {
+    font-family: sans-serif; font-size: 12px; letter-spacing: 6px;
+    color: #d7ede2; opacity: 0.92; margin-bottom: 18px;
+    opacity: 0; transform: translateY(16px); animation: phRise 1.1s ease 0.2s forwards;
+  }
+  .ph-title {
+    font-size: clamp(30px, 5vw, 52px); font-weight: 700; letter-spacing: 3px;
+    margin: 0 0 18px; text-shadow: 0 2px 22px rgba(0,0,0,0.45);
+    opacity: 0; transform: translateY(20px); animation: phRise 1.1s ease 0.4s forwards;
+  }
+  .ph-title .leaf { color: #b9e7c8; }
+  .ph-sub {
+    font-family: "Malgun Gothic", sans-serif;
+    font-size: clamp(13px, 1.6vw, 16px); letter-spacing: 1px; line-height: 1.7;
+    color: rgba(255,255,255,0.94); text-shadow: 0 1px 12px rgba(0,0,0,0.4);
+    margin: 0; opacity: 0; transform: translateY(20px); animation: phRise 1.1s ease 0.65s forwards;
+  }
+  @keyframes phRise { to { opacity: 1; transform: translateY(0); } }
+  .ph-wave {
+    position: absolute; left: 0; right: 0; bottom: -1px; z-index: 3; display: block;
+  }
+
+  /* 떨어지는 꽃잎 */
+  .petals { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+  .petal { position: absolute; top: -8%; animation: petalFall linear infinite; }
+  .petal > i {
+    display: block; border-radius: 150% 0 150% 0;
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.45);
+    animation: petalSway ease-in-out infinite alternate;
+  }
+  @keyframes petalFall {
+    0% { transform: translateY(-10vh); opacity: 0; }
+    8% { opacity: 0.95; }
+    100% { transform: translateY(112vh); opacity: 0.9; }
+  }
+  @keyframes petalSway {
+    from { transform: translateX(-13px) rotate(0deg); }
+    to   { transform: translateX(15px) rotate(360deg); }
+  }
+  @media (max-width: 640px) {
+    .topbar { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
+    .topbar .brand { font-size: 13px; letter-spacing: 2px; }
+    .nav-menu { gap: 15px; }
+    .nav-menu a { font-size: 12px; letter-spacing: 1px; }
+    .page-hero { height: 380px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ph-bg, .ph-kicker, .ph-title, .ph-sub { animation: none; opacity: 1; transform: none; }
+    .petals { display: none; }
+  }
+
+  /* ===== 분류 그룹 탭 (가로 나열) ===== */
+  .group-tabs {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 12px; max-width: 1000px; margin: 18px auto 0; padding: 0 24px;
+  }
+  .group-tab {
+    display: flex; align-items: center; gap: 7px;
+    cursor: pointer; user-select: none; font-family: inherit;
+    padding: 12px 18px; border-radius: 999px;
+    background: #fff; box-shadow: 0 2px 8px rgba(23,50,72,0.08);
+    border: 1px solid #e3ede8;
+    transition: box-shadow .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .group-tab:hover { box-shadow: 0 4px 14px rgba(46,158,143,0.18); border-color: #bfe4da; }
+  .group-tab .gt-main {
+    font-size: 15px; font-weight: bold; color: #2e9e8f; letter-spacing: 1px;
+  }
+  .group-tab .gt-desc { color: #90a4b4; font-weight: normal; font-size: 11.5px; }
+  .group-tab .gt-count {
+    font-size: 11px; font-weight: bold; color: #2e9e8f; background: #e5f4f1;
+    border-radius: 10px; padding: 2px 9px;
+  }
+  .group-tab.active { border-color: #2e9e8f; background: #f2faf8; }
+  .group-tab.active .gt-main { color: #17324a; }
+
+  /* 선택된 그룹의 원형 목록 패널 (하나만 표시) */
+  .group-panels { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+  .group-panel-item { display: none; }
+  .group-panel-item.active { display: block; }
+
+  .scroll-hint {
+    font-size: 11px; color: #8ea2ac; text-align: right;
+    padding: 10px 6px 0; letter-spacing: 0.5px;
+  }
+
+  /* ===== 원형 아이콘 선택 바 (가로 한 줄, 옆으로 스크롤) ===== */
+  .picker {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 22px 24px;
+    padding: 14px 6px 18px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .picker::-webkit-scrollbar { height: 8px; }
+  .picker::-webkit-scrollbar-track { background: #eef3ec; border-radius: 4px; }
+  .picker::-webkit-scrollbar-thumb { background: #bfe0d6; border-radius: 4px; }
+  .picker::-webkit-scrollbar-thumb:hover { background: #2e9e8f; }
+
+  .picker .item {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    width: 108px;
+    scroll-snap-align: start;
+  }
+  .picker .circle {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid transparent;
+    background: #dfe6ee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .picker .circle img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  /* 이미지가 아직 없을 때 이모지 자리표시 */
+  .picker .circle .emoji { font-size: 40px; }
+  .picker .item:hover .circle { transform: translateY(-4px) scale(1.04); }
+  .picker .item.active .circle {
+    border-color: #2e9e8f;
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 4px 14px rgba(46,158,143,0.5);
+  }
+  .picker .label {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #17324a;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .picker .item.active .label { color: #2e9e8f; }
+  .picker .tagline {
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: #6d8a84;
+    text-align: center;
+    line-height: 1.35;
+    max-width: 100px;
+  }
+
+  /* ===== 상세 카드 영역 ===== */
+  .detail-wrap {
+    max-width: 860px;
+    margin: 24px auto 60px;
+    padding: 0 24px;
+  }
+  .detail {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .detail.show { opacity: 1; transform: translateY(0); }
+
+  .detail .photo {
+    width: 100%;
+    height: 340px;
+    background: #dfe6ee;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .detail .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .detail .photo .emoji { font-size: 120px; }
+
+  .detail .body { padding: 28px 30px 32px; }
+  .detail .body h2 { margin: 0 0 6px; font-size: 24px; color: #17324a; }
+  .detail .badge {
+    display: inline-block; font-size: 11px; font-weight: bold;
+    color: #2e9e8f; background: #e5f4f1; border-radius: 4px;
+    padding: 3px 9px; margin: 0 0 10px 8px; vertical-align: middle;
+  }
+  .detail .sci {
+    display: inline-block;
+    font-size: 12px; color: #557;
+    background: #eef2f6; border-radius: 4px;
+    padding: 3px 9px; margin-bottom: 16px;
+  }
+  .detail .sci i { font-style: italic; }
+  .detail .desc {
+    font-size: 15px; line-height: 1.9; color: #333;
+    white-space: pre-line;
+    margin-bottom: 6px;
+  }
+
+  /* ===== 소리로 듣는 설명 ===== */
+  .audio-block {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 22px; padding: 11px 14px;
+    background: #eef6f4; border: 1px solid #dcebe7; border-radius: 12px;
+  }
+  .audio-block .audio-ic { font-size: 20px; }
+  .audio-block .audio-txt { font-size: 13px; font-weight: bold; color: #17324a; white-space: nowrap; }
+  .audio-block audio { flex: 1; height: 36px; min-width: 0; }
+
+  /* ===== 지도 + 영상 2단 배치 ===== */
+  .media-row {
+    display: flex; flex-wrap: wrap; gap: 22px;
+    margin-top: 20px; padding-top: 20px;
+    border-top: 1px dashed #d8dfe6;
+  }
+  .media-col { flex: 1 1 240px; min-width: 0; }
+  .col-title { font-size: 14px; font-weight: bold; color: #17324a; margin: 0 0 4px; }
+  .habitat-sub { font-size: 12px; color: #5a7184; line-height: 1.6; margin-bottom: 14px; }
+  .habitat-sub b { color: #2e9e8f; }
+
+  .mapbox { width: 176px; margin: 0 auto; text-align: center; }
+  .mapbox .rt, .mapbox .rb { font-size: 10px; color: #9bb0bf; letter-spacing: 2px; }
+  .mapbox .rt { margin-bottom: 6px; }
+  .mapbox .rb { margin-top: 6px; }
+  .mapinner {
+    position: relative; width: 150px; margin: 0 auto;
+    background: #f7fbfa; border: 1px solid #e6efeb;
+    border-radius: 10px; padding: 0; line-height: 0;
+    overflow: hidden;
+  }
+  .mapinner img { width: 100%; display: block; }
+  .mapinner .spot {
+    position: absolute;
+    border-radius: 50%;
+    aspect-ratio: 1 / 1;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle,
+      rgba(64,190,138,0.9) 0%,
+      rgba(64,190,138,0.45) 42%,
+      rgba(64,190,138,0) 72%);
+    animation: habitatPulse 3.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes habitatPulse {
+    0%, 100% { opacity: 0.12; transform: translate(-50%, -50%) scale(0.78); }
+    50%      { opacity: 0.95; transform: translate(-50%, -50%) scale(1.08); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mapinner .spot { animation: none; opacity: 0.7; }
+  }
+
+  .videobox {
+    width: 100%; border-radius: 12px; overflow: hidden;
+    background: #000; box-shadow: 0 3px 12px rgba(0,0,0,0.16);
+  }
+  .videobox video { width: 100%; height: auto; display: block; }
+  .video-cap { font-size: 11px; color: #8494a1; line-height: 1.5; margin-top: 8px; }
+
+  @media (max-width: 600px) {
+    .media-col { flex-basis: 100%; }
+  }
+
+  footer.outro {
+    padding: 30px 40px; background: #17324a;
+    color: #cfe0ee; font-size: 12px; text-align: center; line-height: 1.8;
+  }
+
+  @media (max-width: 600px) {
+    .detail .photo { height: 220px; }
+    .picker .circle { width: 78px; height: 78px; }
+    .picker .item { width: 92px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    온천천 아카이브
+    <span class="en">ONCHEONCHEON ARCHIVE</span>
+  </a>
+  <nav class="nav-menu">
+    <a href="온천천의_역사.html">역사</a>
+    <a href="storymap.html">지도</a>
+    <a href="온천천%20아카이브.html">안내책자</a>
+    <a href="온천천의_수생생물.html" class="active">수생생물</a>
+    <a href="온천천의_시민참여.html">시민 참여</a>
+    <a href="온천천의_AI질문.html">AI에게 질문</a>
+  </nav>
+</header>
+
+<section class="page-hero">
+  <div class="ph-bg"></div>
+  <div class="ph-overlay"></div>
+  <div class="petals"></div>
+  <div class="ph-content">
+    <div class="ph-kicker">부산 온천천 · 하천 생태 아카이브</div>
+    <h1 class="ph-title">온천천의 <span class="leaf">수생생물</span></h1>
+    <p class="ph-sub">맑은 물길을 따라 살아가는 물고기와 물새, 저서동물, 그리고 수달까지<br>
+    아래 동그란 아이콘을 눌러 각 생물의 사진·영상·소리를 만나 보세요.</p>
+  </div>
+  <svg class="ph-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" width="100%" height="46">
+    <path d="M0,32 C240,64 480,8 720,28 C960,48 1200,60 1440,26 L1440,60 L0,60 Z" fill="#eef3ec"></path>
+  </svg>
+</section>
+
+<!-- 원형 선택 바 (JS가 채움) -->
+<div id="picker-root"></div>
+
+<!-- 상세 영역 (JS가 채움) -->
+<div class="detail-wrap">
+  <div class="detail" id="detail"></div>
+</div>
+
+<footer class="outro">
+  자료 출처 · 『부산 온천천의 생물 — 하천 생태 가이드북』, 부산광역시 보건환경연구원<br>
+  사진과 설명은 위 가이드북의 내용을 바탕으로 정리하였습니다.
+</footer>
+
+<script>
+  /* =========================================================
+     수생생물 데이터 — 『부산 온천천의 생물』(부산광역시 보건환경연구원)
+     - id       : 고유 구분값
+     - name     : 이름 (국문)
+     - sci      : 학명 · 분류
+     - group    : 분류 묶음 (어류 / 저서동물 / 조류 / 기타 생물)
+     - emoji    : 사진이 없을 때 임시로 보여줄 이모지
+     - thumb    : 원형 썸네일 이미지 경로
+     - photo    : 상세 큰 사진 경로
+     - desc     : 소개 글 (줄바꿈은 \n)
+     ========================================================= */
+  var creatures = [
+    // ── 어류 ──
+    {
+      id: "beodeulchi", group: "어류", name: "버들치", tag: "상류 계곡을 접수한 텃세 만렙 소형어",
+      sci: "<i>Moroco oxycephalus</i> · 잉어목 잉어과 황어아과", emoji: "🐟",
+      thumb: "images/creatures/beodeulchi.jpg", photo: "images/creatures/beodeulchi.jpg",
+      desc: "온천천 최상류에서 구서역 인근까지 넓게 분포합니다. 상류로 갈수록 개체수가 크게 늘어 범어사 인근 계곡에서는 대부분의 어류가 버들치였으며, 중류로 갈수록 출현빈도가 뚝 떨어집니다. 맑은 물에 사는 어류로 알려져 있지만 약간 오염된 수역에서도 관찰됩니다.\n약 8~15cm까지 자라고 입수염이 없으며, 아래턱이 위턱보다 조금 짧습니다. 부착조류·식물의 종자·수서곤충 등을 먹고 살며, 산란기는 4~6월로 유속이 느린 여울에 알을 낳습니다."
+    },
+    {
+      id: "chamgalgeoni", group: "어류", name: "참갈겨니", tag: "혼인철엔 얼굴에 하얀 뾰루지 '추성'이 뿅!",
+      sci: "<i>Zacco koreanus</i> · 잉어목 잉어과 피라미아과", emoji: "🐟",
+      thumb: "images/creatures/chamgalgeoni.jpg", photo: "images/creatures/chamgalgeoni.jpg",
+      desc: "온천천 상류부터 장전역 인근까지 풍부하게 서식합니다. 최상류 계곡에서는 거의 보이지 않으나 청룡2호교 인근부터 개체수가 늘어 남산공영주차장~장전역 구간에서 아주 흔합니다. 13~20cm까지 자라며 물이 맑은 하천에서 수서곤충을 먹습니다.\n수컷은 산란기(5~8월)에 붉고 화려한 혼인색으로 변하고 눈과 입 주위에 '추성'이라는 하얀 돌기가 생깁니다. 갈겨니와 닮았지만, 갈겨니는 눈동자 위가 충혈되듯 붉고 참갈겨니는 그렇지 않습니다."
+    },
+    {
+      id: "dongsari", group: "어류", name: "동사리", tag: "밤에만 출근하는 '구구송' 야행성 가수",
+      sci: "<i>Odontobutis platycephala</i> · 농어목 동사리과", emoji: "🐟",
+      thumb: "images/creatures/dongsari.jpg", photo: "images/creatures/dongsari.jpg",
+      desc: "온천천 상류의 바위와 자갈이 많은 계곡에 주로 살며 간혹 금정구청 인근 중류에서도 보입니다. 야행성으로 낮에는 돌 밑에 숨어 있다가 밤에 수서곤충·갑각류·작은 어류를 잡아먹으며 약 10~15cm까지 자랍니다.\n수컷은 자기 영역에서 텃세를 부리고 암컷이 알을 낳으면 그 알을 지킵니다. 산란기에는 '구구, 구구' 하는 소리를 내며, 주변 환경에 따라 짙은 갈색에서 옅은 갈색까지 변하는 한국 고유종입니다."
+    },
+    {
+      id: "kkeokji", group: "어류", name: "꺽지", tag: "새끼 지키는 상류의 상남자 육식어",
+      sci: "<i>Coreoperca herzi</i> · 농어목 꺽지과", emoji: "🐟",
+      thumb: "images/creatures/kkeokji.jpg", photo: "images/creatures/kkeokji.jpg",
+      desc: "온천천 상류의 바위·자갈이 많은 계곡에서만 드물게 관찰됩니다. 낮에는 돌 틈에 숨어 있다가 밤에 활동하며 수서곤충이나 작은 어류를 먹는 육식어류로 약 20cm까지 자랍니다.\n산란기는 5~6월이며 수컷은 새끼가 일정 크기로 자랄 때까지 보호합니다. 입이 크고 잔이빨이 발달해 있으며, 아가미 덮개 뒷부분의 파란 점이 특징입니다."
+    },
+    {
+      id: "mikkuri", group: "어류", name: "미꾸리", tag: "진흙 속에서도 살아남는 만능 서바이버",
+      sci: "<i>Misgurnus anguillicaudatus</i> · 잉어목 미꾸리과", emoji: "🐟",
+      thumb: "images/creatures/mikkuri.jpg", photo: "images/creatures/mikkuri.jpg",
+      desc: "온천천 중·하류의 수초가 많은 곳 틈새에 주로 살며 날씨가 추워지면 진흙 속으로 들어가기도 합니다. 약 15~20cm까지 자라고 수온·수질 변화와 가뭄에 내성이 커 서식 범위가 넓습니다. 잡식성으로 부착조류·실지렁이·모기유충·식물 등 다양한 먹이를 먹습니다.\n미꾸라지와 매우 닮았지만, 미꾸리는 정면에서 보면 더 둥글고 수염이 미꾸라지보다 짧습니다."
+    },
+    {
+      id: "ingeo", group: "어류", name: "잉어", tag: "수염 두 쌍 단 온천천 최고참 대장어",
+      sci: "<i>Cyprinus carpio</i> · 잉어목 잉어과", emoji: "🐟",
+      thumb: "images/creatures/ingeo.jpg", photo: "images/creatures/ingeo.jpg",
+      desc: "온천천 중·하류에서 아주 흔하게 관찰되는 어류로 보통 60cm까지 자랍니다. 수질오염과 용존산소가 부족한 상황에서도 내성이 커 오염수역이나 하류 기수역에서도 흔히 발견됩니다. 갈색·은색·백색·검은색 등 체색이 다양합니다.\n잡식성으로 조개·새우·게·식물·부착조류 등 무엇이든 잘 먹으며, 붕어와 닮았지만 입에 2쌍의 수염이 있는 점이 다릅니다."
+    },
+    {
+      id: "bungeo", group: "어류", name: "붕어", tag: "잉어 절친, 뭐든 다 먹는 대식가",
+      sci: "<i>Carassius auratus</i> · 잉어목 잉어과", emoji: "🐟",
+      thumb: "images/creatures/bungeo.jpg", photo: "images/creatures/bungeo.jpg",
+      desc: "온천천 중·하류에서 아주 흔하게 관찰되는 어류로 보통 30cm까지 자랍니다. 수질오염과 용존산소가 부족한 상황에서도 내성이 커 오염수역이나 하류 기수역에서도 흔히 발견됩니다. 서식지에 따라 갈색·은색 등 체색이 다양합니다.\n잡식성으로 조개·새우·게·식물·부착조류 등 무엇이든 잘 먹으며, 잉어와 함께 발견되는 경우가 많습니다."
+    },
+    // ── 저서동물 ──
+    {
+      id: "daseulgi", group: "저서동물", name: "다슬기", tag: "맑은 물만 고집하는 청정 지표 껍데기",
+      sci: "<i>Semisulcospira libertina</i> · 복족강 다슬기과", emoji: "🐌",
+      thumb: "images/creatures/daseulgi.jpg", photo: "images/creatures/daseulgi.jpg",
+      desc: "유속이 빠르고 맑은 물이 흐르는 온천천 상류에 주로 서식합니다. 돌에 붙어 있는 부착조류나 수초, 퇴적된 유기물 등을 먹습니다.\n뾰족하고 긴 형태이며 다 자라면 길이 30~40mm에 이릅니다. 나층은 5~6층이나 끝부분이 부식되어 망가진 경우가 많습니다. 변이가 많고 유사종도 많아 분류가 어렵습니다."
+    },
+    {
+      id: "muldalpaengi", group: "저서동물", name: "물달팽이", tag: "오염에도 끄떡없는 만능 물속 청소부",
+      sci: "<i>Radix auricularia</i> · 복족강 물달팽이과", emoji: "🐌",
+      thumb: "images/creatures/muldalpaengi.jpg", photo: "images/creatures/muldalpaengi.jpg",
+      desc: "온천천 대부분의 지점에서 발견되며 주로 돌 표면에 붙어 있고, 유기물이 유입되는 다소 오염된 하천에서 많이 관찰됩니다. 잡식성으로 동물성·식물성 물질을 가리지 않고 잘 먹습니다.\n끝이 뾰족한 계란 모양으로 약 20mm 크기까지 관찰되었으며, 껍데기 입구(각구)가 오른쪽에 있는 것이 왼돌이물달팽이와의 차이점입니다."
+    },
+    // ── 조류 ──
+    {
+      id: "soebaengno", group: "조류", name: "쇠백로", tag: "노란 발 신고 다니는 우아한 저격수",
+      sci: "<i>Egretta garzetta</i> · 황새목 백로과", emoji: "🕊️",
+      thumb: "images/creatures/soebaengno.jpg", photo: "images/creatures/soebaengno.jpg",
+      desc: "온천천 중·하류에서 자주 보이는 아주 흔한 조류입니다. 백로에는 대백로·중백로·쇠백로 등이 있으며 온천천에는 쇠백로가 주로 서식합니다.\n부리와 다리가 검고 발은 노란색이며 성체 크기는 약 60cm 정도입니다. 물고기·수서곤충·개구리 등을 잡아먹습니다."
+    },
+    {
+      id: "waegari", group: "조류", name: "왜가리", tag: "부산에서 겨울 나는 새침한 텃새",
+      sci: "<i>Ardea cinerea</i> · 황새목 백로과", emoji: "🕊️",
+      thumb: "images/creatures/waegari.jpg", photo: "images/creatures/waegari.jpg",
+      desc: "온천천 중·하류에서 언제나 볼 수 있는 흔한 조류입니다. 다른 지방에서는 여름새이기도 하지만 부산에서는 겨울을 나는 텃새로 지냅니다.\n백로류와 닮았지만 눈 위에서 뒷머리까지 검은 깃털이 있고 날개 부분이 회색빛인 점이 다릅니다. 크기가 큰 편으로 약 90~100cm이며 물고기·수서곤충·개구리·쥐 등을 잡아먹습니다."
+    },
+    {
+      id: "gamauji", group: "조류", name: "민물가마우지", tag: "2m까지 잠수하는 물속 스나이퍼",
+      sci: "<i>Phalacrocorax carbo</i> · 사다새목 가마우지과", emoji: "🦆",
+      thumb: "images/creatures/gamauji.jpg", photo: "images/creatures/gamauji.jpg",
+      desc: "온천천의 흔한 겨울철새로 12~3월 정도까지 관찰됩니다. 크기가 1m에 가까운 큰 새로 잠수를 잘해 2m 이상 깊이까지 헤엄쳐 물고기를 잡아먹습니다.\n유사종인 가마우지는 몸 윗면이 약간 녹색빛을 띠는 반면 민물가마우지는 어두운 갈색을 띱니다. 번식기에는 머리와 다리 부근에 하얀 번식깃이 나타납니다."
+    },
+    {
+      id: "soeori", group: "조류", name: "쇠오리", tag: "겨울에만 놀러오는 알록달록 손님",
+      sci: "<i>Anas crecca</i> · 기러기목 오리과", emoji: "🦆",
+      thumb: "images/creatures/soeori.jpg", photo: "images/creatures/soeori.jpg",
+      desc: "겨울철새로 온천천 하류 기수역에서 겨울에 관찰됩니다. 약 40cm 크기이며 수컷의 머리는 적갈색이고 눈부터 목까지 녹색입니다. 암컷은 수컷과 다르게 얼룩진 갈색을 띱니다.\n식물의 연한 잎과 곤충, 무척추동물 등을 먹습니다."
+    },
+    // ── 기타 생물 ──
+    {
+      id: "sudal", group: "기타 생물", name: "수달", tag: "온천천 최상위 포식자, 오늘도 야간 근무",
+      sci: "<i>Lutra lutra</i> · 식육목 족제비과 · 천연기념물 제330호", emoji: "🦦",
+      thumb: "images/creatures/sudal.jpg", photo: "images/creatures/sudal.jpg",
+      desc: "온천천 구서역·온천역 등지에서 자주 목격됩니다. 천연기념물 제330호이자 멸종위기 야생생물 1급으로 지정된 보호종입니다.\n몸길이 70cm 내외, 몸무게 5~10kg 정도로 온천천에서는 최상위 포식자입니다. 야행성이며 물고기를 주식으로 하고 개구리·게 등도 먹습니다. 보호를 위한 전문조사와 서식처 조성 등의 노력이 필요합니다."
+    },
+    {
+      id: "jara", group: "기타 생물", name: "자라", tag: "느릿느릿? 물속에선 총알 스피드",
+      sci: "<i>Trionyx sinensis</i> · 거북목 자라과", emoji: "🐢",
+      thumb: "images/creatures/jara.jpg", photo: "images/creatures/jara.jpg",
+      desc: "온천천 상류의 남산동 일대에 서식합니다. 등딱지 길이가 약 15~20cm이며 물 밖에서는 매우 느리지만 물속에서는 매우 빠릅니다.\n물속에서 물고기·개구리 등을 잡아먹으며, 물가로 올라와 일광욕을 하는 모습도 온천천에서 관찰됩니다. 무는 힘이 세고 사람을 물 수도 있으므로 함부로 만지면 안 됩니다."
+    },
+    {
+      id: "dukkeobi", group: "기타 생물", name: "두꺼비", tag: "낮엔 은둔, 밤엔 출근하는 야행성 사냥꾼",
+      sci: "<i>Bufo gargarizans</i> · 무미목 두꺼비과", emoji: "🐸",
+      thumb: "images/creatures/dukkeobi.jpg", photo: "images/creatures/dukkeobi.jpg",
+      desc: "온천천 연안교 하류부 인근의 인공 연못에 많은 개체가 서식합니다. 도심에 살아 로드킬 사례가 많아 서식지 조성 등 보호 조치가 필요합니다.\n성체는 6~12cm로 암컷이 더 크며 얼룩무늬가 많고 개체변이가 심합니다. 낮에는 돌 밑이나 산사면에 흙을 파고 쉬다가 비가 오거나 밤이 되면 활동하며, 딱정벌레·나비·나방·메뚜기 등 곤충류를 잡아먹습니다."
+    },
+    {
+      id: "omgaeguri", group: "기타 생물", name: "옴개구리", tag: "건드리면 화나서 냄새 뿜뿜뿜",
+      sci: "<i>Glandirana rugosa</i> · 무미목 개구리과", emoji: "🐸",
+      thumb: "images/creatures/omgaeguri.jpg", photo: "images/creatures/omgaeguri.jpg",
+      desc: "온천천 상류의 계곡에 서식합니다. 약 5cm 크기의 개구리로 몸 전체에 융기된 돌기가 많습니다.\n건드리면 자극적인 냄새를 풍기는 점액질을 분비합니다. 거미나 곤충류 등을 잡아먹습니다."
+    }
+  ];
+
+  /* 서식지 지도 표시 위치 — 온천천 유역 지도(images/oncheon_map_base.png) 기준
+     x,y : 지도 위 서식 중심 좌표(%), r : 서식 범위 반지름(지도 너비 대비 %)
+     reach : 서식 구간 설명. 값은 가이드북의 각 종별 '서식지' 지도를 근거로 함. */
+  var habitat = {
+    beodeulchi:  { x:31, y:17, r:22, reach:"최상류 ~ 구서역" },
+    chamgalgeoni:{ x:29, y:26, r:20, reach:"상류 ~ 장전역" },
+    dongsari:    { x:31, y:18, r:18, reach:"상류 계곡" },
+    kkeokji:     { x:31, y:20, r:18, reach:"상류 계곡" },
+    mikkuri:     { x:34, y:43, r:30, reach:"중류 ~ 하류" },
+    ingeo:       { x:31, y:50, r:24, reach:"중류 ~ 하류" },
+    bungeo:      { x:33, y:49, r:24, reach:"중류 ~ 하류" },
+    daseulgi:    { x:28, y:27, r:18, reach:"상류" },
+    muldalpaengi:{ x:32, y:42, r:30, reach:"전 구간" },
+    soebaengno:  { x:34, y:48, r:30, reach:"중류 ~ 하류" },
+    waegari:     { x:32, y:46, r:28, reach:"중류 ~ 하류" },
+    gamauji:     { x:33, y:65, r:18, reach:"하류 · 겨울철새" },
+    soeori:      { x:33, y:62, r:20, reach:"하류 기수역 · 겨울철새" },
+    sudal:       { x:32, y:35, r:18, reach:"구서 ~ 온천역 일대" },
+    jara:        { x:29, y:24, r:16, reach:"상류 남산동 일대" },
+    dukkeobi:    { x:31, y:72, r:14, reach:"하류 연안교 인근" },
+    omgaeguri:   { x:31, y:15, r:16, reach:"상류 계곡" }
+  };
+
+  var pickerRoot = document.getElementById('picker-root');
+  var detailEl = document.getElementById('detail');
+  var currentId = null;
+
+  // 분류 그룹별로 원형 아이콘 생성 (그룹 라벨 + picker)
+  var groupOrder = [];
+  creatures.forEach(function (c) {
+    if (groupOrder.indexOf(c.group) === -1) groupOrder.push(c.group);
+  });
+  var groupDesc = {
+    "어류": "물속의 작은 친구들",
+    "저서동물": "돌 밑에 사는 무척추동물",
+    "조류": "온천천을 찾는 물새",
+    "기타 생물": "함께 살아가는 생물들"
+  };
+
+  // 그룹 탭(가로 나열)과, 선택된 그룹만 보여주는 단일 패널 영역
+  var tabsRow = document.createElement('div');
+  tabsRow.className = 'group-tabs';
+  pickerRoot.appendChild(tabsRow);
+
+  var panelsWrap = document.createElement('div');
+  panelsWrap.className = 'group-panels';
+  pickerRoot.appendChild(panelsWrap);
+
+  var groupTabs = {};
+  var groupPanels = {};
+
+  groupOrder.forEach(function (g) {
+    var members = creatures.filter(function (c) { return c.group === g; });
+
+    var tabBtn = document.createElement('div');
+    tabBtn.className = 'group-tab';
+    tabBtn.innerHTML =
+      '<span class="gt-main">' + g + '</span>' +
+      '<span class="gt-desc">' + (groupDesc[g] || '') + '</span>' +
+      '<span class="gt-count">' + members.length + '종</span>';
+    tabBtn.addEventListener('click', function () { selectGroup(g); });
+    tabsRow.appendChild(tabBtn);
+    groupTabs[g] = tabBtn;
+
+    var panel = document.createElement('div');
+    panel.className = 'group-panel-item';
+
+    var hint = document.createElement('div');
+    hint.className = 'scroll-hint';
+    hint.textContent = '옆으로 스크롤해서 더 보기 →';
+    panel.appendChild(hint);
+
+    var row = document.createElement('div');
+    row.className = 'picker';
+
+    members.forEach(function (c) {
+      var item = document.createElement('div');
+      item.className = 'item';
+      item.dataset.id = c.id;
+
+      var circleInner = c.thumb
+        ? '<img src="' + c.thumb + '" alt="' + c.name + '">'
+        : '<span class="emoji">' + c.emoji + '</span>';
+
+      item.innerHTML =
+        '<div class="circle">' + circleInner + '</div>' +
+        '<div class="label">' + c.name + '</div>' +
+        '<div class="tagline">' + (c.tag || '') + '</div>';
+
+      item.addEventListener('click', function () { select(c.id); });
+      row.appendChild(item);
+    });
+
+    panel.appendChild(row);
+    panelsWrap.appendChild(panel);
+    groupPanels[g] = panel;
+  });
+
+  // 탭 클릭 시 해당 그룹만 보여주고 나머지는 숨김
+  function selectGroup(g) {
+    Object.keys(groupTabs).forEach(function (key) {
+      groupTabs[key].classList.toggle('active', key === g);
+      groupPanels[key].classList.toggle('active', key === g);
+    });
+  }
+
+  // 첫 번째 그룹(어류)을 기본으로 표시
+  if (groupOrder.length) selectGroup(groupOrder[0]);
+
+  // 선택 처리
+  function select(id) {
+    if (id === currentId) return;
+    currentId = id;
+
+    // 아이콘 활성화 표시
+    document.querySelectorAll('.picker .item').forEach(function (el) {
+      el.classList.toggle('active', el.dataset.id === id);
+    });
+
+    var c = creatures.find(function (x) { return x.id === id; });
+
+    var photoInner = c.photo
+      ? '<img src="' + c.photo + '" alt="' + c.name + '">'
+      : '<span class="emoji">' + c.emoji + '</span>';
+
+    var sciHtml = c.sci ? '<div class="sci">' + c.sci + '</div>' : '';
+
+    // 소리로 듣는 설명
+    var audioHtml =
+      '<div class="audio-block">' +
+        '<span class="audio-ic">🔊</span>' +
+        '<span class="audio-txt">소리로 듣기</span>' +
+        '<audio controls preload="none" src="images/audio/' + c.id + '.mp3"></audio>' +
+      '</div>';
+
+    // 지도(좌) + 영상(우) 2단
+    var hb = habitat[c.id];
+    var mapCol = '';
+    if (hb) {
+      mapCol =
+        '<div class="media-col media-left">' +
+          '<div class="col-title">🗺️ 온천천 서식 위치</div>' +
+          '<div class="habitat-sub">초록빛으로 <b>천천히 반짝이는 곳</b>이 주요 서식 구간입니다.' +
+            ' &middot; 서식 구간 <b>' + hb.reach + '</b></div>' +
+          '<div class="mapbox">' +
+            '<div class="rt">△ 상류(북)</div>' +
+            '<div class="mapinner">' +
+              '<img src="images/oncheon_map_base.png" alt="온천천 유역 지도">' +
+              '<span class="spot" style="left:' + hb.x + '%;top:' + hb.y + '%;width:' + (hb.r * 2) + '%"></span>' +
+            '</div>' +
+            '<div class="rb">하류(남) ▽</div>' +
+          '</div>' +
+        '</div>';
+    }
+    var videoCol =
+      '<div class="media-col media-right">' +
+        '<div class="col-title">🎬 사진으로 만든 짧은 영상</div>' +
+        '<div class="videobox">' +
+          '<video src="images/video/' + c.id + '.mp4" autoplay muted loop playsinline></video>' +
+        '</div>' +
+        '<div class="video-cap">※ 실제 촬영 영상이 아니라, 위 사진에 움직임을 준 짧은 영상입니다.</div>' +
+      '</div>';
+    var mediaHtml = '<div class="media-row">' + mapCol + videoCol + '</div>';
+
+    // 전환 애니메이션: 잠깐 숨겼다가 내용 교체 후 다시 보이기
+    detailEl.classList.remove('show');
+    setTimeout(function () {
+      detailEl.innerHTML =
+        '<div class="photo">' + photoInner + '</div>' +
+        '<div class="body">' +
+          '<h2>' + c.name + '<span class="badge">' + c.group + '</span></h2>' +
+          sciHtml +
+          '<div class="desc">' + c.desc + '</div>' +
+          audioHtml +
+          mediaHtml +
+        '</div>';
+      requestAnimationFrame(function () { detailEl.classList.add('show'); });
+    }, 180);
+  }
+
+  // 처음에 첫 번째 생물 자동 선택
+  if (creatures.length) select(creatures[0].id);
+
+  /* 헤더에 떨어지는 꽃잎 */
+  (function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var wrap = document.querySelector('.page-hero .petals');
+    if (!wrap) return;
+    var cols = [
+      'linear-gradient(135deg,#ffe3ee,#f7abc8)',
+      'linear-gradient(135deg,#ffffff,#ffd4e5)',
+      'linear-gradient(135deg,#ffd0e1,#ef9dbc)'
+    ];
+    for (var i = 0; i < 16; i++) {
+      var p = document.createElement('span'); p.className = 'petal';
+      var leaf = document.createElement('i');
+      var s = 8 + Math.random() * 8;
+      leaf.style.width = s + 'px'; leaf.style.height = s + 'px';
+      leaf.style.background = cols[i % 3];
+      leaf.style.animationDuration = (2.4 + Math.random() * 2.6) + 's';
+      leaf.style.animationDelay = (-Math.random() * 4) + 's';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.animationDuration = (6 + Math.random() * 7) + 's';
+      p.style.animationDelay = (-Math.random() * 12) + 's';
+      p.appendChild(leaf); wrap.appendChild(p);
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천 수달 목격 게시판</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --accent:#1f7a4d; --text:#28303a; --muted:#727a72; --line:#e7e5df; --bg:#eef0ec; --danger:#c0472f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  body { display: flex; justify-content: center; align-items: flex-start; padding: 32px 16px; min-height: 100vh; }
+  a { color: var(--accent); }
+
+  .popup {
+    background: #fff; width: 100%; max-width: 880px; border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.14); overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .titlebar h1 { margin: 0; font-size: 15px; }
+  .close-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--bg);
+    color: var(--muted); font-size: 13px; cursor: pointer; flex-shrink: 0;
+  }
+  .close-btn:hover { background: #e2e2dc; color: var(--text); }
+
+  .popup-body { padding: 20px 22px 26px; }
+  .lead-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  p.lead { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; max-width: 480px; }
+  .new-post-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 20px;
+    padding: 9px 16px; font-size: 12.5px; font-weight: bold; font-family: inherit; cursor: pointer;
+    white-space: nowrap;
+  }
+  .new-post-btn:hover { opacity: 0.9; }
+
+  .note-box {
+    border: 1px solid var(--line); padding: 11px 14px; font-size: 11.5px; line-height: 1.7;
+    color: #444; border-radius: 8px; margin-bottom: 18px;
+  }
+  .note-box b { color: var(--text); }
+
+  /* form */
+  .post-form {
+    border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px;
+    margin-bottom: 22px; display: none;
+  }
+  .post-form.open { display: block; }
+  .post-form h2 { margin: 0 0 14px; font-size: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  @media (max-width: 560px){ .form-grid { grid-template-columns: 1fr; } }
+  .post-form label { display:block; font-size: 11.5px; font-weight: bold; margin-bottom: 5px; }
+  .post-form input[type=text], .post-form input[type=date], .post-form textarea {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 12px; background: #fafaf7;
+  }
+  .post-form textarea { min-height: 76px; resize: vertical; }
+  .photo-drop {
+    border: 1px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center;
+    font-size: 11.5px; color: var(--muted); cursor: pointer; background: #fafaf7;
+  }
+  .photo-drop:hover { background: var(--bg); }
+  .photo-preview { margin-top: 8px; max-width: 150px; border-radius: 8px; display: none; }
+  .form-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-primary, .btn-ghost {
+    font-family: inherit; font-size: 12.5px; font-weight: bold; padding: 9px 18px; border-radius: 18px;
+    border: none; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-ghost { background: #fff; color: var(--muted); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--bg); }
+
+  /* board */
+  .board-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .board-head h2 { margin: 0; font-size: 14px; }
+  .board-head .count { font-size: 11.5px; color: var(--muted); }
+
+  .board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .post-card {
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .post-photo { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--bg); display: block; }
+  .post-photo-placeholder {
+    width: 100%; aspect-ratio: 4/3; background: var(--bg); display: flex; align-items: center;
+    justify-content: center; font-size: 34px; color: var(--accent);
+  }
+  .post-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .post-meta { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--muted); }
+  .post-loc { font-size: 13px; font-weight: bold; }
+  .post-desc { font-size: 12px; line-height: 1.6; color: #333; flex: 1; }
+  .post-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .post-nick { font-size: 10.5px; color: var(--muted); }
+  .del-btn { background: none; border: none; color: #c9baa0; font-size: 12px; cursor: pointer; padding: 2px 4px; }
+  .del-btn:hover { color: var(--danger); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 12.5px; }
+  .disclaimer { margin-top: 18px; font-size: 10.5px; color: #a2a89f; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="popup">
+  <div class="titlebar">
+    <h1>🦦 온천천 수달 목격 게시판</h1>
+    <button class="close-btn" onclick="window.close()">✕</button>
+  </div>
+  <div class="popup-body">
+
+    <div class="lead-row">
+      <p class="lead">시민이 직접 목격한 온천천 수달의 순간을 사진과 함께 기록하는 공간입니다. 야간 관찰 시 플래시 촬영은 삼가주세요.</p>
+      <button class="new-post-btn" id="toggleFormBtn">📸 새 목격 게시물 작성</button>
+    </div>
+
+    <div class="note-box">
+      <b>📌 안내</b> 이 게시판의 게시물은 지금 사용 중인 <b>이 브라우저(기기)에만 저장</b>되는 데모 기능입니다. 다른 방문자나 다른 기기와 공유되지 않습니다.
+    </div>
+
+    <div class="post-form" id="postForm">
+      <h2>수달 목격 기록하기</h2>
+      <div class="form-grid">
+        <div>
+          <label>목격 날짜</label>
+          <input type="date" id="fDate">
+        </div>
+        <div>
+          <label>닉네임 (선택)</label>
+          <input type="text" id="fNick" placeholder="비워두면 '익명'으로 표시됩니다">
+        </div>
+        <div class="full">
+          <label>목격 위치</label>
+          <input type="text" id="fLoc" placeholder="예: 온천천 두실교~장전교 구간">
+        </div>
+        <div class="full">
+          <label>사진 (선택)</label>
+          <div class="photo-drop" id="photoDrop">📷 클릭해서 사진 선택 (선택사항)</div>
+          <input type="file" id="fPhoto" accept="image/*" style="display:none;">
+          <img id="photoPreview" class="photo-preview">
+        </div>
+        <div class="full">
+          <label>목격 내용</label>
+          <textarea id="fDesc" placeholder="언제, 어떤 상황에서 수달을 보셨나요?"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="submitPostBtn">등록하기</button>
+        <button class="btn-ghost" id="cancelPostBtn">취소</button>
+      </div>
+    </div>
+
+    <div class="board-head">
+      <h2>목격 기록</h2>
+      <span class="count" id="postCount"></span>
+    </div>
+    <div class="board-grid" id="boardGrid"></div>
+
+    <div class="disclaimer">
+      🦦 데모 페이지 (브라우저 로컬 저장) · 야생동물 관찰 시 먹이 주기·플래시 촬영·소음을 자제해 주세요.
+    </div>
+  </div>
+</div>
+
+<script>
+var STORAGE_KEY = 'oncheoncheonOtterPosts';
+
+var seedPosts = [
+  {
+    id: 's1', nickname: '온천천네트워크', date: '2026-06-14', location: '두실교~장전교 구간',
+    desc: '늦은 저녁 산책 중 수달 1마리가 물속에서 헤엄치는 모습을 약 1분간 관찰했습니다. 플래시 없이 조용히 지켜봤습니다.',
+    photo: '', createdAt: Date.parse('2026-06-14')
+  },
+  {
+    id: 's2', nickname: '익명', date: '2026-05-02', location: '구서역 인근 산책로',
+    desc: '아침 운동 중 돌 위에 앉아 있는 수달을 목격했습니다. 사람을 보고 곧 물속으로 사라졌어요.',
+    photo: '', createdAt: Date.parse('2026-05-02')
+  }
+];
+
+function loadPosts(){
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) { savePosts(seedPosts); return seedPosts.slice(); }
+    return JSON.parse(raw);
+  } catch(e){ return seedPosts.slice(); }
+}
+function savePosts(list){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch(e){}
+}
+
+var posts = loadPosts();
+
+function renderBoard(){
+  var grid = document.getElementById('boardGrid');
+  var countEl = document.getElementById('postCount');
+  var sorted = posts.slice().sort(function(a,b){ return b.createdAt - a.createdAt; });
+
+  countEl.textContent = sorted.length + '건의 목격 기록';
+
+  if (!sorted.length){
+    grid.innerHTML = '<div class="empty-state">아직 등록된 목격 기록이 없습니다. 첫 기록을 남겨보세요!</div>';
+    return;
+  }
+
+  grid.innerHTML = sorted.map(function(p){
+    var photoHtml = p.photo
+      ? '<img class="post-photo" src="' + p.photo + '" alt="수달 목격 사진">'
+      : '<div class="post-photo-placeholder">🦦</div>';
+    return (
+      '<div class="post-card" data-id="' + p.id + '">' +
+        photoHtml +
+        '<div class="post-body">' +
+          '<div class="post-meta"><span>📅 ' + escapeHtml(p.date || '') + '</span><span>🦦</span></div>' +
+          '<div class="post-loc">📍 ' + escapeHtml(p.location || '위치 미상') + '</div>' +
+          '<div class="post-desc">' + escapeHtml(p.desc || '') + '</div>' +
+          '<div class="post-foot">' +
+            '<span class="post-nick">' + escapeHtml(p.nickname || '익명') + '</span>' +
+            '<button class="del-btn" onclick="deletePost(\'' + p.id + '\')">🗑 삭제</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function escapeHtml(str){
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function deletePost(id){
+  if (!confirm('이 목격 기록을 삭제할까요?')) return;
+  posts = posts.filter(function(p){ return p.id !== id; });
+  savePosts(posts);
+  renderBoard();
+}
+
+/* ================= 폼 열기/닫기 ================= */
+var formEl = document.getElementById('postForm');
+var toggleBtn = document.getElementById('toggleFormBtn');
+var cancelBtn = document.getElementById('cancelPostBtn');
+
+toggleBtn.addEventListener('click', function(){
+  formEl.classList.add('open');
+  document.getElementById('fDate').valueAsDate = new Date();
+  formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+cancelBtn.addEventListener('click', function(){
+  formEl.classList.remove('open');
+  resetForm();
+});
+
+function resetForm(){
+  document.getElementById('fNick').value = '';
+  document.getElementById('fLoc').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fPhoto').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoPreview').src = '';
+  currentPhotoDataUrl = '';
+}
+
+/* ================= 사진 업로드 & 리사이즈 ================= */
+var currentPhotoDataUrl = '';
+var photoDrop = document.getElementById('photoDrop');
+var fPhoto = document.getElementById('fPhoto');
+var photoPreview = document.getElementById('photoPreview');
+
+photoDrop.addEventListener('click', function(){ fPhoto.click(); });
+
+fPhoto.addEventListener('change', function(){
+  var file = fPhoto.files[0];
+  if (!file) return;
+  resizeImage(file, 640, 0.75, function(dataUrl){
+    currentPhotoDataUrl = dataUrl;
+    photoPreview.src = dataUrl;
+    photoPreview.style.display = 'block';
+  });
+});
+
+function resizeImage(file, maxDim, quality, callback){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if (w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+      else if (h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ================= 게시물 등록 ================= */
+document.getElementById('submitPostBtn').addEventListener('click', function(){
+  var date = document.getElementById('fDate').value;
+  var loc = document.getElementById('fLoc').value.trim();
+  var desc = document.getElementById('fDesc').value.trim();
+  var nick = document.getElementById('fNick').value.trim();
+
+  if (!date || !loc || !desc){
+    alert('목격 날짜, 위치, 목격 내용을 입력해 주세요.');
+    return;
+  }
+
+  var post = {
+    id: 'p' + Date.now(),
+    nickname: nick || '익명',
+    date: date,
+    location: loc,
+    desc: desc,
+    photo: currentPhotoDataUrl,
+    createdAt: Date.now()
+  };
+
+  posts.push(post);
+  savePosts(posts);
+  renderBoard();
+
+  formEl.classList.remove('open');
+  resetForm();
+});
+
+renderBoard();
+</script>
+
+</body>
+</html>

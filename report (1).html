@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천 안전사고 신고처 찾기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --accent:#1f7a4d; --danger:#c0472f; --info:#2b6cb0;
+    --text:#28303a; --muted:#727a72; --line:#e7e5df; --bg:#eef0ec;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  body { display: flex; justify-content: center; align-items: flex-start; padding: 32px 16px; min-height: 100vh; }
+  a { color: var(--accent); }
+
+  .popup {
+    background: #fff; width: 100%; max-width: 720px; border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.14); overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .titlebar h1 { margin: 0; font-size: 15px; }
+  .close-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--bg);
+    color: var(--muted); font-size: 13px; cursor: pointer; flex-shrink: 0;
+  }
+  .close-btn:hover { background: #e2e2dc; color: var(--text); }
+
+  .popup-body { padding: 20px 22px 26px; }
+  p.lead { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0 0 18px; }
+
+  /* emergency banner */
+  .emergency-banner { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:10px; margin-bottom: 18px; }
+  .emergency-box { border-radius: 10px; padding: 12px 14px; color: #fff; }
+  .emergency-box.call { background: var(--danger); }
+  .emergency-box.facility { background: var(--info); }
+  .emergency-box .elabel { font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+  .emergency-box .phone-chip { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.55); color: #fff; }
+  .emergency-box .phone-chip .hint { color: rgba(255,255,255,0.85); }
+  .emergency-box .phone-chip:hover { background: rgba(255,255,255,0.28); }
+  .emergency-box a.slink { background: rgba(255,255,255,0.2); }
+  .emergency-box a.slink:hover { background: rgba(255,255,255,0.32); }
+
+  a.slink {
+    display: inline-block; font-size: 11.5px; font-weight: bold; color: #fff;
+    background: var(--accent); padding: 6px 13px; border-radius: 16px; text-decoration: none;
+  }
+  a.slink:hover { opacity: 0.88; }
+
+  /* search */
+  .search-wrap { position: relative; margin-bottom: 8px; }
+  .search-wrap input {
+    width: 100%; padding: 11px 14px 11px 36px; border-radius: 10px; border: 1px solid var(--line);
+    font-size: 13px; font-family: inherit; background: #fafaf7; color: var(--text);
+  }
+  .search-wrap input:focus { outline: none; border-color: var(--accent); }
+  .search-wrap .sicon-search { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--muted); }
+  .search-hint { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  .search-hint span {
+    display:inline-block; background: #fff; border: 1px solid var(--line); color: var(--text);
+    padding: 3px 9px; border-radius: 12px; margin: 3px 4px 0 0; cursor: pointer;
+  }
+  .search-hint span:hover { background: var(--bg); }
+
+  .result-count { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+  .result-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:10px; }
+  .result-card { border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
+  .result-card.urgent { border-color: var(--danger); }
+  .result-card .rhead { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  .result-card .ricon { font-size:16px; }
+  .result-card h3 { margin:0; font-size:13px; flex:1; }
+  .result-card .urgent-badge { font-size:9.5px; font-weight:bold; color:#fff; background:var(--danger); padding:2px 7px; border-radius:9px; }
+  .result-card p { font-size:11px; color:#444; line-height:1.6; margin:0 0 8px; }
+  .result-card .contact-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .result-card.urgent a.slink { background: var(--danger); }
+  .no-result { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius:10px; padding:14px; text-align:center; }
+
+  .phone-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; border: 1px dashed var(--accent); color: var(--accent);
+    font-size: 11.5px; font-weight: bold; padding: 5px 11px; border-radius: 16px;
+    cursor: pointer; font-family: inherit;
+  }
+  .phone-chip:hover { background: var(--bg); }
+  .phone-chip.copied { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .phone-chip .hint { font-weight: normal; font-size: 10px; color: var(--muted); }
+  .phone-chip.copied .hint { color: #eef8f1; }
+
+  .note-box {
+    border: 1px solid var(--line); padding: 11px 14px; font-size: 11.5px; line-height: 1.7;
+    color: #444; border-radius: 8px; margin-top: 16px;
+  }
+  .note-box b { color: var(--text); }
+  .disclaimer { margin-top: 20px; font-size: 10.5px; color: #a2a89f; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="popup">
+  <div class="titlebar">
+    <h1>🚨 온천천 안전사고 신고처 찾기</h1>
+    <button class="close-btn" onclick="window.close()">✕</button>
+  </div>
+  <div class="popup-body">
+    <p class="lead">상황을 검색하면 신고해야 할 연락처와 사이트를 바로 안내해 드립니다. 전화번호는 클릭하면 복사됩니다.</p>
+
+    <div class="emergency-banner">
+      <div class="emergency-box call">
+        <div class="elabel">🆘 생명·신체가 위험하면</div>
+        <button class="phone-chip" onclick="copyPhone(this, '112')">☎ 112 <span class="hint">클릭해서 복사</span></button>
+        <button class="phone-chip" onclick="copyPhone(this, '119')">☎ 119 <span class="hint">클릭해서 복사</span></button>
+      </div>
+      <div class="emergency-box facility">
+        <div class="elabel">🛠 시설·생활 안전위험은</div>
+        <a class="slink" href="https://www.safetyreport.go.kr/" target="_blank" rel="noopener">안전신문고 바로가기 ↗</a>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <span class="sicon-search">🔍</span>
+      <input id="safetySearch" type="text" placeholder="상황을 입력하세요 (예: 안전사고, 익수, 화재...)" oninput="renderResults(this.value)">
+    </div>
+    <div class="search-hint">
+      빠른 검색:
+      <span onclick="setSearch('안전사고')">안전사고</span>
+      <span onclick="setSearch('익수')">익수·응급</span>
+      <span onclick="setSearch('화재')">화재</span>
+      <span onclick="setSearch('시설물')">시설물 파손</span>
+      <span onclick="setSearch('오염')">수질오염</span>
+      <span onclick="setSearch('폭행')">범죄·폭행</span>
+      <span onclick="setSearch('금정구')">금정구</span>
+      <span onclick="setSearch('동래구')">동래구</span>
+      <span onclick="setSearch('연제구')">연제구</span>
+    </div>
+
+    <div class="result-count" id="resultCount"></div>
+    <div class="result-grid" id="resultGrid"></div>
+
+    <div class="note-box">
+      <b>📋 신고할 때 준비하면 좋은 정보</b> — 발견 시각, 정확한 위치, 상황과 규모, 사진 1~2장, 반복 여부.
+      급류·화재·전기·붕괴 위험 구역에는 신고를 위해 접근하지 마세요.
+    </div>
+
+    <div class="disclaimer">
+      출처: 온천천_안전사고_신고처_안내(2026.07.24 기준) · 안전신문고·환경신문고·부산민원120·국민신문고·112·119 공식 페이지<br>
+      ⚠ 담당부서·메뉴 구조는 변경될 수 있습니다. 실제 신고 시 각 공식 누리집의 최신 안내를 확인하세요.
+    </div>
+  </div>
+</div>
+
+<script>
+  var situations = [
+    {
+      icon: "🌊", title: "익수·급류·응급환자", urgent: true,
+      desc: "사람이 물에 빠지거나 급류에 고립된 경우, 심정지·의식불명·호흡곤란·중상·골절 등 응급상황",
+      match: ["안전사고","위험상황","익수","물에 빠짐","급류","고립","구조","심정지","의식불명","호흡곤란","중상","골절","응급","구급","익사"],
+      contacts: [{type:"tel", label:"119", value:"119"}]
+    },
+    {
+      icon: "🚔", title: "폭행·성범죄·흉기위협·절도", urgent: true,
+      desc: "진행 중인 범죄나 즉각적인 치안 위험 상황. 비긴급 상담은 경찰민원24 또는 182.",
+      match: ["안전사고","위험상황","폭행","성범죄","성추행","스토킹","흉기","절도","범죄","위협","치안"],
+      contacts: [{type:"tel", label:"112", value:"112"}, {type:"link", label:"경찰민원24(비긴급)", value:"https://minwon24.police.go.kr/"}, {type:"tel", label:"182(비긴급 상담)", value:"182"}]
+    },
+    {
+      icon: "🔥", title: "화재·전기·감전 위험", urgent: true,
+      desc: "갈대밭·쓰레기통 화재, 노출 전선·침수된 분전함 등 감전 위험",
+      match: ["안전사고","위험상황","화재","불","연기","전기","감전","전선","분전함","스파크","소각"],
+      contacts: [{type:"tel", label:"119", value:"119"}]
+    },
+    {
+      icon: "🌧", title: "침수·제방 붕괴·낙하물", urgent: true,
+      desc: "집중호우 중 산책로 침수나 제방·난간·교량 붕괴 조짐은 119, 비 그친 뒤 배수구 막힘 등은 안전신문고",
+      match: ["안전사고","위험상황","침수","제방","범람","붕괴","폭우","호우","배수구","낙하물","안전펜스"],
+      contacts: [{type:"tel", label:"119", value:"119"}, {type:"link", label:"안전신문고", value:"https://www.safetyreport.go.kr/"}]
+    },
+    {
+      icon: "⚠️", title: "시설물 파손·보행 위험", urgent: false,
+      desc: "난간 흔들림, 맨홀 개방·침하, 보행로 구멍, 계단·경사로 파손, 가로등·CCTV·비상벨 고장, 불법주정차·킥보드 방치",
+      match: ["안전사고","위험상황","시설물","파손","난간","맨홀","보행로","계단","경사로","가로등","cctv","비상벨","불법주정차","킥보드 방치"],
+      contacts: [{type:"link", label:"안전신문고", value:"https://www.safetyreport.go.kr/"}]
+    },
+    {
+      icon: "💧", title: "수질오염·유해물질", urgent: false,
+      desc: "오·폐수 방류, 기름·화학물질 유출, 물고기 집단 폐사, 악취, 불법투기·소각",
+      match: ["수질오염","오염","오폐수","오·폐수","기름","유출","물고기","폐사","화학약품","불법투기","불법소각","악취"],
+      contacts: [{type:"tel", label:"128", value:"128"}, {type:"link", label:"부산 환경신문고", value:"https://www.busan.go.kr/depart/ecodeclaration"}]
+    },
+    {
+      icon: "🚲", title: "자전거·킥보드·차량 사고", urgent: false,
+      desc: "충돌 부상자는 119, 난폭운전·불법진입 등 현장 위협은 112, 반복되는 과속·방치는 안전신문고",
+      match: ["안전사고","자전거","킥보드","차량","충돌","사고","난폭운전","오토바이"],
+      contacts: [{type:"tel", label:"119", value:"119"}, {type:"tel", label:"112", value:"112"}, {type:"link", label:"안전신문고", value:"https://www.safetyreport.go.kr/"}]
+    },
+    {
+      icon: "☎", title: "담당 기관이 불분명한 일반 불편", urgent: false,
+      desc: "어디에 신고할지 모르는 일반적인 불편·관리 민원",
+      match: ["담당","불분명","일반민원","불편","관할","문의","민원"],
+      contacts: [{type:"tel", label:"051-120", value:"051-120"}, {type:"link", label:"부산민원120", value:"https://www.busan.go.kr/minwon/minwon02"}]
+    },
+    {
+      icon: "🏛", title: "반복되는 구조적 문제·시설 개선 건의", urgent: false,
+      desc: "장기적인 제도·시설 개선이 필요한 반복적 문제 건의",
+      match: ["반복","구조적","시설개선","건의","제도개선","국민신문고"],
+      contacts: [{type:"link", label:"국민신문고", value:"https://www.epeople.go.kr/"}]
+    },
+    {
+      icon: "📍", title: "금정구 관할 구간", urgent: false,
+      desc: "온천천 금정구 구간(최상류) 담당 구청",
+      match: ["금정구","금정"],
+      contacts: [{type:"tel", label:"051-519-4000", value:"051-519-4000"}, {type:"link", label:"금정구청", value:"https://www.geumjeong.go.kr/"}]
+    },
+    {
+      icon: "📍", title: "동래구 관할 구간", urgent: false,
+      desc: "온천천 동래구 구간(중류) 담당 구청",
+      match: ["동래구","동래"],
+      contacts: [{type:"tel", label:"051-550-4000", value:"051-550-4000"}, {type:"link", label:"동래구 민원상담", value:"https://www.dongnae.go.kr/index.dongnae?menuCd=DOM_000000102001004000"}]
+    },
+    {
+      icon: "📍", title: "연제구 관할 구간", urgent: false,
+      desc: "온천천 연제구 구간(하류) 담당 구청",
+      match: ["연제구","연제"],
+      contacts: [{type:"tel", label:"051-665-4000", value:"051-665-4000"}, {type:"link", label:"연제구 민원상담", value:"https://www.yeonje.go.kr/portal/contents.do?mId=0111000000"}]
+    }
+  ];
+
+  function contactHtml(c) {
+    if (c.type === 'tel') {
+      return '<button class="phone-chip" onclick="copyPhone(this, \'' + c.value + '\')">☎ ' + c.label + ' <span class="hint">클릭해서 복사</span></button>';
+    }
+    return '<a class="slink" href="' + c.value + '" target="_blank" rel="noopener">' + c.label + ' ↗</a>';
+  }
+
+  function renderResults(query) {
+    query = (query || '').trim().toLowerCase();
+    var list = situations.filter(function (s) {
+      if (!query) return true;
+      if (s.title.toLowerCase().indexOf(query) !== -1) return true;
+      if (s.desc.toLowerCase().indexOf(query) !== -1) return true;
+      return s.match.some(function (k) {
+        var kl = k.toLowerCase();
+        return kl.indexOf(query) !== -1 || query.indexOf(kl) !== -1;
+      });
+    });
+    list.sort(function (a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0); });
+
+    var countEl = document.getElementById('resultCount');
+    var gridEl = document.getElementById('resultGrid');
+
+    if (!list.length) {
+      countEl.textContent = '';
+      gridEl.innerHTML = '<div class="no-result">일치하는 상황을 찾지 못했어요. 생명이 위험하면 <b>112</b> 또는 <b>119</b>, 애매하면 <b>부산민원120(051-120)</b>으로 문의하세요.</div>';
+      return;
+    }
+
+    countEl.textContent = query ? list.length + '건의 신고처를 찾았습니다.' : '전체 ' + list.length + '개 상황 · 검색으로 좁혀보세요.';
+    gridEl.innerHTML = list.map(function (s) {
+      return '<div class="result-card' + (s.urgent ? ' urgent' : '') + '">' +
+        '<div class="rhead"><span class="ricon">' + s.icon + '</span><h3>' + s.title + '</h3>' +
+        (s.urgent ? '<span class="urgent-badge">긴급</span>' : '') + '</div>' +
+        '<p>' + s.desc + '</p>' +
+        '<div class="contact-row">' + s.contacts.map(contactHtml).join('') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function setSearch(term) {
+    document.getElementById('safetySearch').value = term;
+    renderResults(term);
+  }
+
+  renderResults('');
+
+  function copyPhone(btn, num) {
+    var hint = btn.querySelector('.hint');
+    var original = hint.textContent;
+    function done(ok) {
+      hint.textContent = ok ? '복사됨!' : '복사 실패';
+      btn.classList.toggle('copied', ok);
+      setTimeout(function () {
+        hint.textContent = original;
+        btn.classList.remove('copied');
+      }, 1500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(num).then(function () { done(true); }).catch(function () { fallbackCopy(num, done); });
+    } else {
+      fallbackCopy(num, done);
+    }
+  }
+  function fallbackCopy(num, cb) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = num;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      cb(ok);
+    } catch (e) {
+      cb(false);
+    }
+  }
+</script>
+
+</body>
+</html>

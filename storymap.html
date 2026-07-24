@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천 스토리맵 - 주요 역별 현황</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    color: #17324a;
+    /* 잔잔하게 흐르는 물빛 배경 */
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 14px, rgba(255,255,255,0) 14px 46px),
+      linear-gradient(120deg, #e2eef1, #eaf5f2, #dceaf1, #e7f2ec, #e2eef1);
+    background-size: 220px 220px, 300% 300%;
+    animation: waterFlow 24s ease-in-out infinite;
+  }
+  @keyframes waterFlow {
+    0%   { background-position: 0 0,        0% 50%; }
+    50%  { background-position: 120px 70px, 100% 50%; }
+    100% { background-position: 240px 140px, 0% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) { body { animation: none; } }
+
+  :root { --brand-brown:#4a2c15; --leaf:#2e9e8f; --serif:"Noto Serif KR", serif; }
+
+  /* 상단 메뉴바 (다른 페이지와 동일) */
+  .topbar {
+    position: sticky; top: 0; z-index: 1100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+    background: rgba(242,245,240,0.92);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(30,58,82,0.10);
+  }
+  .topbar .brand {
+    color: var(--brand-brown); text-decoration: none; font-family: var(--serif);
+    font-size: 17px; letter-spacing: 4px; font-weight: 700;
+  }
+  .topbar .brand .en {
+    display: block; font-size: 10px; letter-spacing: 3px;
+    opacity: 0.7; margin-top: 3px; font-family: sans-serif; font-weight: 400;
+  }
+  .nav-menu { display: flex; gap: 30px; }
+  .nav-menu a {
+    color: #fff; text-decoration: none; font-family: var(--serif);
+    font-size: 15px; letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.35);
+    position: relative; padding: 4px 2px; transition: color .25s;
+  }
+  .nav-menu a::after {
+    content: ""; position: absolute; left: 0; bottom: -3px;
+    width: 0; height: 2px; background: var(--leaf); transition: width .3s ease;
+  }
+  .nav-menu a:hover { color: #17324a; }
+  .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+  .nav-menu a.active { color: var(--leaf); font-weight: 700; }
+
+  /* 상단 헤더 (흰색 배경) */
+  header.hero {
+    position: relative; overflow: hidden;
+    padding: 54px 40px 44px; color: var(--brand-brown);
+    background: #ffffff;
+    border-bottom: 1px solid #ece4da;
+  }
+  header.hero .hero-bg,
+  header.hero .hero-overlay { display: none; }
+  header.hero .hero-content { position: relative; z-index: 2; }
+  header.hero h1 {
+    margin: 0 0 10px; font-size: clamp(26px,4vw,34px);
+    font-family: var(--serif); font-weight: 700; letter-spacing: 1px;
+    color: var(--brand-brown);
+  }
+  header.hero p { margin: 0; font-size: 14px; color: #4a5f70; max-width: 640px; line-height: 1.7; }
+  header.hero .disclaimer { color: #6d7f8c; }
+
+  @media (max-width: 760px) {
+    .topbar { padding: 12px 18px; flex-wrap: wrap; gap: 8px; }
+    .topbar .brand { font-size: 14px; letter-spacing: 2px; }
+    .nav-menu { gap: 14px; } .nav-menu a { font-size: 12px; letter-spacing: 1px; }
+  }
+
+  #container { position: relative; display: flex; }
+
+  #story {
+    width: 42%;
+    min-width: 320px;
+    z-index: 10;
+  }
+
+  #map-container {
+    width: 58%;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+  }
+  #map { width: 100%; height: 100%; }
+
+  .step {
+    min-height: 92vh;
+    display: flex;
+    align-items: center;
+    padding: 20px 36px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    border-left: 6px solid #cccccc;
+    opacity: 0.45;
+    transform: translateY(6px) scale(0.98);
+    transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.35s ease;
+  }
+
+  .step.active .card {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .card .num {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    background: #17324a;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-bottom: 10px;
+  }
+  .card h2 { margin: 0; font-size: 27px; color: #17324a; line-height: 1.2; }
+  .card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .st-thumb {
+    flex: 0 0 66px; width: 66px; height: 66px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 2px 8px rgba(30,58,82,0.18); object-fit: cover;
+  }
+  .st-photo {
+    flex: 0 0 58px; width: 58px; height: 58px; border-radius: 10px;
+    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(30,58,82,0.18); object-fit: cover;
+  }
+  .card-head .ch-text { min-width: 0; }
+  .card .st-summary { font-size: 13px; color: #4a6473; line-height: 1.45; margin-top: 4px; }
+  .scroll-next {
+    margin: 18px auto 2px; text-align: center;
+    font-size: 12px; font-weight: bold; color: #2e9e8f; letter-spacing: 1px;
+  }
+  .scroll-next .arrow {
+    display: block; font-size: 22px; line-height: 1; margin-top: 2px;
+    animation: bounceDown 1.4s ease-in-out infinite;
+  }
+  @keyframes bounceDown { 0%,100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(5px); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .scroll-next .arrow { animation: none; } }
+  .card .type-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 10px;
+  }
+  .card .line-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #17324a;
+    background: #e7edf3;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 10px;
+    margin-left: 6px;
+  }
+  .card .meta { font-size: 12px; color: #555; margin-bottom: 8px; }
+  .card .desc { font-size: 13px; line-height: 1.7; color: #333; margin-bottom: 10px; }
+
+  .card .subhead {
+    font-size: 12px; font-weight: bold; color: #17324a;
+    margin: 12px 0 4px; padding-top: 10px; border-top: 1px dashed #ddd;
+  }
+  .card .elevator { font-size: 12px; color: #333; }
+  .card .nearby-list { margin: 0; padding-left: 18px; font-size: 12px; color: #333; line-height: 1.6; }
+  .card .access-note { font-size: 12px; line-height: 1.6; margin: 4px 0; }
+  .card .access-note .tag {
+    display: inline-block; font-size: 10px; font-weight: bold; color: #fff;
+    border-radius: 3px; padding: 1px 6px; margin-right: 6px; vertical-align: middle;
+  }
+  .card .access-note .tag.good { background: #2e7d32; }
+  .card .access-note .tag.caution { background: #c62828; }
+  .card .research {
+    font-size: 12px; line-height: 1.6; color: #444; background: #fbf6e8;
+    border-left: 3px solid #d8a51a; padding: 8px 10px; margin-top: 10px;
+  }
+  .card .research .label { font-weight: bold; color: #8a6600; display: block; margin-bottom: 2px; }
+
+  .disclaimer {
+    max-width: 640px; margin: 14px 0 0; font-size: 12px; color: #cfe0ee; line-height: 1.6;
+    opacity: 0.85;
+  }
+
+  .legend {
+    background: rgba(255,255,255,0.95); padding: 10px 12px; border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4); font-size: 12px; line-height: 1.6;
+  }
+  .legend .swatch {
+    display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.3);
+  }
+  .legend .lg-emoji {
+    display: inline-block; width: 18px; text-align: center;
+    margin-right: 5px; font-size: 14px; vertical-align: middle;
+  }
+
+  /* 역 표지 아이콘 */
+  .station-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #17324a; border: 2px solid #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.45); font-size: 13px; line-height: 1;
+    transition: transform .25s ease, background .25s ease;
+  }
+  .station-icon.active-st {
+    transform: scale(1.32); background: #0f2740;
+    box-shadow: 0 0 0 4px rgba(46,158,143,0.45), 0 1px 4px rgba(0,0,0,0.5);
+  }
+
+  .festival-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    border: 2px solid #fff;
+  }
+  .festival-icon span { transform: rotate(45deg); font-size: 15px; }
+
+  .fpopup { width: 260px; }
+  .fpopup img { width: 100%; border-radius: 6px; display: block; margin-bottom: 4px; }
+  .fpopup .ai-badge {
+    font-size: 10px; font-weight: bold; color: #8a1c1c; background: #fde5e5;
+    border-radius: 4px; padding: 3px 6px; margin-bottom: 8px; line-height: 1.4; display: block;
+  }
+  .fpopup .fname { font-weight: bold; font-size: 14px; margin-bottom: 2px; }
+  .fpopup .fcat {
+    display: inline-block; font-size: 10px; font-weight: bold; color: #fff;
+    background: #ad1457; border-radius: 4px; padding: 1px 6px; margin-bottom: 6px;
+  }
+  .fpopup .fmeta { font-size: 11px; color: #555; margin-bottom: 6px; line-height: 1.5; }
+  .fpopup .fdesc { font-size: 12px; line-height: 1.55; color: #333; }
+
+  footer.outro {
+    padding: 40px; background: #17324a; color: #cfe0ee; font-size: 13px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    온천천 아카이브
+    <span class="en">ONCHEONCHEON ARCHIVE</span>
+  </a>
+  <nav class="nav-menu">
+    <a href="온천천의_역사.html">역사</a>
+    <a href="storymap.html" class="active">지도</a>
+    <a href="온천천%20아카이브.html">안내책자</a>
+    <a href="온천천의_수생생물.html">수생생물</a>
+    <a href="온천천의_시민참여.html">시민 참여</a>
+    <a href="온천천의_AI질문.html">AI에게 질문</a>
+  </nav>
+</header>
+
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>온천천 스토리맵</h1>
+    <p>온천천 산책로와 인접한 지하철 11개 역을 남산역에서 안락역까지 순서대로 따라가며,
+    역별 대표 랜드마크와 편의시설을 살펴봅니다. 스크롤하면 지도가 해당 위치로 이동합니다.</p>
+    <p class="disclaimer">🛈 접근성 항목 중 "이용자 후기 기반" 표시가 없는 엘리베이터 대수는 부산교통공사 공식 공공데이터(2025-11-30 기준)이며,
+    경사·계단 등 장벽 정보는 지도 서비스 이용자 후기 기반으로 공식 실측 자료가 아닙니다. 정확한 안내는 관할 자치구·부산교통공사 공지를 확인하세요.</p>
+  </div>
+</header>
+
+<div id="container">
+  <div id="story">
+    <!-- steps injected by JS -->
+  </div>
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
+</div>
+
+<footer class="outro">
+  출처: 온천천_주요_역별_현황_보고서(2026) · 온천천_시설_접근성_데이터 · 부산 온천천 축제·행사 상세 조사 보고서-최종본 · 부산교통공사 엘리베이터 공공데이터(2025-11-30 기준) · 위키백과(역 정보)<br>
+  시설 운영시간·대여 가능 여부는 방문 시 변동될 수 있으며, 이용자 후기 기반 접근성 정보는 검증 후 이용하시기 바랍니다.<br>
+  ⚠ 축제·행사 사진은 모두 AI 생성 이미지로, 실제 현장 사진이 아닙니다.<br>
+  📷 역 출입구 사진: Wikimedia Commons (CC BY-SA 라이선스, 각 역 문서 링크 참고)
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/scrollama"></script>
+<script>
+  // 마커·카드 테두리 색상 구분에는 더 이상 쓰지 않고, 카드 안 "분류" 배지 색상으로만 사용합니다.
+  var TYPE_INFO = {
+    trail:      { label: "산책로 시작/종점", color: "#2e7d32" },
+    nature:     { label: "생태",             color: "#00897b" },
+    commercial: { label: "상업/편의시설",     color: "#ef6c00" },
+    sports:     { label: "운동시설",         color: "#1565c0" },
+    landmark:   { label: "랜드마크",         color: "#6a1b9a" }
+  };
+
+  var STATION_COLOR = "#17324a";
+
+  var stations = [
+    { name: "남산역", type: "trail", lat: 35.2654258, lng: 129.0925658, zoom: 16,
+      line: "1호선",
+      point: "산책로 시작점", facility: "역사 내 화장실 권장",
+      desc: "산책로 시작점으로 활용되며, 출발 전 역사 내 화장실 이용을 권장합니다.",
+      elevator: "내부 2대 · 외부 2대",
+      nearby: [],
+      accessNotes: [],
+      research: "부산교통공사 공식 자료상 엘리베이터는 설치돼 있으나(내부 2대·외부 2대), 온천천 진입로 경사나 이용자 후기 기반 접근성 정보는 확인되지 않았습니다." },
+    { name: "두실역", type: "nature", lat: 35.2570300, lng: 129.0913933, zoom: 16,
+      line: "1호선",
+      point: "온천천 최상류 접근점", facility: "수달 야간 활동 구간",
+      desc: "온천천 최상류 접근점입니다. 수달의 야간 활동 구간(19:00~01:00, 두실교~장전교 구간)으로 알려져 있어 야간 관찰 시 조용한 이용과 안전에 유의하세요.",
+      elevator: "내부 2대 · 외부 2대",
+      nearby: [],
+      accessNotes: [] },
+    { name: "구서역", type: "commercial", lat: 35.2468259, lng: 129.0915018, zoom: 16,
+      line: "1호선",
+      point: "이마트(편의 거점)", facility: "하천 진입로: 구서동 86-17",
+      desc: "이마트가 생활 편의 거점 역할을 하며, 구서동 86-17 인근 하천 진입로를 통해 산책로에 접근할 수 있습니다.",
+      elevator: "내부 2대 · 외부 0대",
+      nearby: [],
+      accessNotes: [
+        { type: "good", text: "엘리베이터가 있어 노약자·휠체어 이용자도 접근 가능하다는 이용자 평가 — 공식 엘리베이터 대수 데이터와도 일치합니다." },
+        { type: "caution", text: "승강장이 3층 지상역이라 출입구에서 승강장까지 진입 동선이 긴 편입니다." }
+      ] },
+    { name: "장전역", type: "sports", lat: 35.2382122, lng: 129.0880983, zoom: 16,
+      line: "1호선",
+      point: "체력단련장(2번 출구 하부)", facility: "개방화장실(북쪽 500m)",
+      desc: "2번 출구 하부 체력단련장을 이용할 수 있습니다. 하천에 물고기가 보이고 자전거 전용도로가 갖춰져 있다는 이용자 언급이 많은 구간입니다.",
+      elevator: "내부 2대 · 외부 0대",
+      nearby: [
+        { name: "온천천 개방화장실(부곡동)", detail: "장전역에서 북쪽 약 500m, 온천천 상류 구간 개방화장실" }
+      ],
+      accessNotes: [] },
+    { name: "부산대역", type: "sports", lat: 35.2296377, lng: 129.0893608, zoom: 16,
+      line: "1호선",
+      point: "농구장·봄철 플리마켓", facility: "대학가 상권",
+      desc: "농구장과 봄철 플리마켓이 주요 볼거리이며, 대학가 상권과 연계해 식음·쇼핑 편의가 좋습니다. 시민단체가 진행한 수달 서식처 적합도 조사에서 이 구간은 20점 만점 중 8점을 받았습니다.",
+      elevator: "내부 2대 · 외부 0대",
+      nearby: [
+        { name: "온천천 부산대역 농구장", detail: "하천변 체육시설, 역에서 약 350m" }
+      ],
+      accessNotes: [] },
+    { name: "온천장역", type: "commercial", lat: 35.2206226, lng: 129.0861819, zoom: 16,
+      line: "1호선",
+      point: "홈플러스(3번 출구)", facility: "온천 시장 상권",
+      desc: "3번 출구 인근 홈플러스와 온천 시장 상권을 함께 이용할 수 있는 생활 편의 거점입니다.",
+      elevator: "내부 1대 · 외부 0대",
+      nearby: [],
+      accessNotes: [
+        { type: "caution", text: "역 인근 경사가 전동휠체어로 오르기엔 가파르다는 이용자 후기가 있습니다(실측 경사도 미확인). 역 내부 엘리베이터와는 별개로 바깥 진입로 경사에 유의하세요." }
+      ] },
+    { name: "명륜역", type: "commercial", lat: 35.2126465, lng: 129.0797207, zoom: 16,
+      line: "1호선",
+      point: "롯데백화점(스카이워크 직결)", facility: "하천변 테니스장",
+      desc: "롯데백화점과 스카이워크로 직결되며, 동래구청이 조성한 하천변 테니스장을 이용할 수 있습니다.",
+      elevator: "내부 1대 · 외부 0대",
+      nearby: [],
+      accessNotes: [] },
+    { name: "동래역", type: "landmark", lat: 35.2046511, lng: 129.0773598, zoom: 16,
+      line: "1·4호선 환승",
+      point: "인공폭포 광장", facility: "공중화장실 2곳·자전거 무료대여(2시간)",
+      desc: "인공폭포 광장을 중심으로 공중화장실 2곳이 있으며, 자전거 무료대여(2시간) 이용이 가능합니다.",
+      elevator: "1호선 내부 2대·외부 0대 + 4호선 내부 2대·외부 2대",
+      nearby: [
+        { name: "동래 온천천 물놀이장 공중화장실", detail: "동래역 인근 물놀이장 옆" },
+        { name: "온천천 자전거 무료대여소", detail: "여권·신분증 보관 후 2시간 무료, 운영 09:00~16:00, 문의 051-550-4557" }
+      ],
+      accessNotes: [
+        { type: "caution", text: "자전거 대여소는 큰길에서 계단을 내려가야 도착합니다 — 휠체어·유모차 진입이 곤란합니다." }
+      ] },
+    { name: "교대역", type: "sports", lat: 35.1961279, lng: 129.0799388, zoom: 15,
+      line: "1호선·동해선 환승",
+      point: "부산교대·벚꽃 명소", facility: "다목적운동장(세병교)",
+      desc: "부산교대 인근 역으로, 세병교 다목적 운동장과 벚꽃 명소가 산책 동선을 풍부하게 합니다. 6번 출구에서 온천천변 화장실까지 도보 약 9분(409m) 거리입니다.",
+      elevator: "내부 2대 · 외부 3대 (1호선 기준, 동해선 별도 데이터 없음)",
+      nearby: [
+        { name: "세병교 다목적 운동장", detail: "농구 골대 등, 이용자가 많아 대기가 생길 정도" },
+        { name: "온천천변 화장실(수안동)", detail: "온천천로 288, 6번 출구에서 409m·도보 9분" },
+        { name: "세병교 벚꽃길", detail: "2001년 콘크리트 하상 주차장 650m를 철거해 자연형 하천으로 복원한 봄철 명소" }
+      ],
+      accessNotes: [
+        { type: "good", text: "세병교 일대는 다목적 운동장 접근성이 우수하다는 이용자 평가가 있습니다." }
+      ] },
+    { name: "낙민역", type: "sports", lat: 35.20083, lng: 129.09111, zoom: 15,
+      line: "4호선",
+      point: "온천천시민공원 핵심부", facility: "인라인스케이트장·자전거 무료대여",
+      desc: "온천천시민공원 핵심부에 해당하며, 러닝·자전거 트랙, 배드민턴장, 배구장, 야외 운동기구가 모두 갖춰져 24시간 개방됩니다. 시민공원까지는 낙민역에서 도보로 약 1km입니다.",
+      elevator: "내부 1대 · 외부 2대",
+      nearby: [
+        { name: "연안교 접근성 진입점", detail: "동래고속도 4번 출구에서 하천으로 내려가는 진입 동선, 자전거도로·보행로가 색으로 분리" }
+      ],
+      accessNotes: [
+        { type: "good", text: "온천천시민공원은 횡단보도 없이 길게 걸을 수 있고 보행로 폭이 매우 넓어, 평탄 구간이 길어 유모차·휠체어에 유리할 가능성이 있다는 평가입니다." }
+      ],
+      research: "원 보고서는 조사 범위를 '지하철 1호선 및 동해선'으로 표기했지만, 낙민역은 실제로는 부산 도시철도 4호선 소속 역(2011년 개통)입니다." },
+    { name: "안락역", type: "trail", lat: 35.1959611, lng: 129.1038028, zoom: 15,
+      line: "동해선 광역전철",
+      point: "온천천 카페거리 · 산책로 종점", facility: "공중화장실(안락교)",
+      desc: "온천천 카페거리, 안락교와 이어지는 구간입니다. 안락교는 담수와 해수가 만나 숭어가 튀어오르는 모습을 볼 수 있고 일출·일몰 조망 지점으로도 알려져 있습니다.",
+      elevator: "부산교통공사 데이터 없음(코레일이 운영하는 동해선 노선)",
+      nearby: [
+        { name: "온천천 카페거리 벚꽃길", detail: "3월 말~4월 초 벚꽃 명소, 유료 주차장 이용 권장, 역에서 남쪽 약 650m" },
+        { name: "안락교 공중화장실", detail: "산책로 실질적 종점, 역에서 남쪽 약 650m" }
+      ],
+      accessNotes: [],
+      research: "지도 마커는 실제 안락역(동해선, 안연로98번길 57) 좌표로 표시했습니다. 온천천 카페거리·안락교는 역에서 남쪽으로 약 650m 떨어져 있습니다. 안락역은 2016년 동해선 광역전철 개통과 함께 환승역으로 승격됐습니다." }
+  ];
+
+  var FESTIVAL_CATEGORY = {
+    winter: { label: "겨울 (눈)",   color: "#3949ab", emoji: "❄️" },
+    spring: { label: "봄 (벚꽃)",   color: "#d81b60", emoji: "🌸" },
+    market: { label: "마켓",        color: "#f9a825", emoji: "🛍️" },
+    venue:  { label: "상설 공간",   color: "#00838f", emoji: "⛲" },
+    yearround: { label: "연중",     color: "#43a047", emoji: "🎪" }
+  };
+
+  var festivals = [
+    {
+      name: "온천천 빛 축제",
+      category: "winter",
+      icon: "🎆",
+      lat: 35.2054, lng: 129.0778,
+      image: "images/festivals/light-festival.jpg",
+      period: "제3회 2025-12-19 ~ 2026-02-01 (45일간) · 주제 '온천천 연가'",
+      location: "동래역 4번 출구 ~ 수안초등학교 앞 약 1.1km",
+      host: "주최: 동래구",
+      desc: "점등식, 미디어아트, 조명 조형물, 푸드트럭 등으로 구성되는 겨울철 대표 야간 행사입니다. 2026-27년 제4회 개최가 예정되어 있으나 세부 일정은 별도 공고 확인이 필요합니다."
+    },
+    {
+      name: "온천천 벚꽃길",
+      category: "spring",
+      icon: "🌸",
+      lat: 35.195904, lng: 129.082909,
+      image: "images/festivals/cherry-blossom.jpg",
+      period: "매년 3월 말 ~ 4월 초 절정",
+      location: "세병교(교대역) ~ 안락교, 왕벚나무 약 650여 그루",
+      host: "",
+      desc: "부산 대표 봄꽃 명소로 산책·사진 촬영·소규모 봄 행사의 배경이 됩니다. 개화 시기에는 보행량과 차량 정체가 늘어날 수 있어 대중교통과 도보 중심 방문이 적합합니다."
+    },
+    {
+      name: "문화창작마켓 (세병교 하부)",
+      category: "market",
+      icon: "🛍️",
+      lat: 35.19565, lng: 129.08245,
+      image: "images/festivals/flea-market.jpg",
+      period: "봄철 변동 운영",
+      location: "교대역 인근 세병교 하부",
+      host: "",
+      desc: "핸드메이드 소상공인의 창작품을 만날 수 있는 문화창작마켓입니다. 운영 주기, 참가자 모집, 우천 취소 여부는 행사별 공지를 확인하세요."
+    },
+    {
+      name: "플리마켓 (부산대역)",
+      category: "market",
+      icon: "🛍️",
+      lat: 35.2301, lng: 129.0898,
+      image: "images/festivals/flea-market.jpg",
+      period: "봄철 변동 운영",
+      location: "부산대역 인근 하천변",
+      host: "",
+      desc: "봄철 플리마켓과 청년·대학가 연계 프로그램의 후보 공간으로 활용됩니다. 운영 주기, 참가자 모집, 우천 취소 여부는 행사별 공지를 확인하세요."
+    },
+    {
+      name: "인공폭포 광장 행사",
+      category: "venue",
+      icon: "💦",
+      lat: 35.2040, lng: 129.0768,
+      image: "images/festivals/waterfall-plaza.jpg",
+      period: "상설·기획 행사 (수시)",
+      location: "동래역 인근 명륜동 750",
+      host: "",
+      desc: "폭포 경관을 배경으로 축제, 공연, 체험·홍보 부스 등이 열리는 접근성 높은 행사 공간입니다. 지하철 동래역과 주변 상권을 함께 이용하기 좋습니다."
+    },
+    {
+      name: "시민공원 연계 프로그램",
+      category: "yearround",
+      icon: "🎪",
+      lat: 35.192537, lng: 129.095082,
+      image: "images/festivals/citizen-park.jpg",
+      period: "연중 변동 운영",
+      location: "온천교 ~ 안락교 약 5km 구간",
+      host: "",
+      desc: "계절별 생태·환경 교육, 걷기·자전거, 시민 참여형 프로그램이 변동 운영됩니다. 가족 단위 체류와 분산 방문에 적합합니다."
+    }
+  ];
+
+  // 역별 한 줄 요약 (역 순서와 동일)
+  var STATION_SUMMARY = [
+    "온천천 산책이 시작되는 출발점",
+    "밤이면 수달이 나타나는 최상류 접근점",
+    "이마트를 낀 생활 편의 거점",
+    "물고기가 보이는 체력단련·자전거 구간",
+    "농구장과 봄철 플리마켓, 대학가 상권",
+    "홈플러스와 온천시장이 어우러진 편의 거점",
+    "롯데백화점 직결, 하천변 테니스장",
+    "인공폭포 광장과 자전거 무료대여의 중심",
+    "세병교 벚꽃 명소와 다목적 운동장",
+    "24시간 열린 온천천시민공원의 핵심부",
+    "카페거리와 숭어가 튀어오르는 산책로 종점"
+  ];
+
+  // build story cards
+  var storyEl = document.getElementById('story');
+  stations.forEach(function (s, i) {
+    var info = TYPE_INFO[s.type];
+
+    var nearbyHtml = '';
+    if (s.nearby && s.nearby.length) {
+      nearbyHtml = '<div class="subhead">🚻 인근 편의시설 (온천천_시설_접근성_데이터)</div>' +
+        '<ul class="nearby-list">' +
+        s.nearby.map(function (n) { return '<li><strong>' + n.name + '</strong> — ' + n.detail + '</li>'; }).join('') +
+        '</ul>';
+    }
+
+    var accessHtml = '';
+    if (s.accessNotes && s.accessNotes.length) {
+      accessHtml = '<div class="subhead">♿ 접근성 참고 (이용자 후기 기반)</div>' +
+        s.accessNotes.map(function (a) {
+          var tagLabel = a.type === 'good' ? '양호' : '주의';
+          var tagClass = a.type === 'good' ? 'good' : 'caution';
+          return '<div class="access-note"><span class="tag ' + tagClass + '">' + tagLabel + '</span>' + a.text + '</div>';
+        }).join('');
+    }
+
+    var researchHtml = s.research
+      ? '<div class="research"><span class="label">🔎 추가 조사</span>' + s.research + '</div>'
+      : '';
+
+    var step = document.createElement('div');
+    step.className = 'step';
+    step.dataset.index = i;
+    step.innerHTML =
+      '<div class="card" style="border-left-color:' + STATION_COLOR + '">' +
+        '<span class="num">STEP ' + (i + 1) + ' / ' + stations.length + '</span>' +
+        '<div class="card-head">' +
+          '<img class="st-thumb" src="images/stations/s' + i + '.png" alt="' + s.name + ' 상징 이미지">' +
+          '<img class="st-photo" src="images/stations/photo' + i + '.jpg" alt="' + s.name + ' 실제 출입구 사진" loading="lazy">' +
+          '<div class="ch-text">' +
+            '<h2>' + s.name + '</h2>' +
+            '<div class="st-summary">' + (STATION_SUMMARY[i] || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<span class="line-tag">' + s.line + '</span>' +
+        '<div class="subhead" style="border-top:none; padding-top:0; margin-top:6px;">🏷 분류</div>' +
+        '<span class="type-tag" style="background:' + info.color + '">' + info.label + '</span>' +
+        '<div class="meta">대표 포인트: ' + s.point + '<br>편의시설: ' + s.facility + '</div>' +
+        '<div class="desc">' + s.desc + '</div>' +
+        '<div class="subhead">🛗 엘리베이터</div>' +
+        '<div class="elevator">' + s.elevator + '</div>' +
+        nearbyHtml +
+        accessHtml +
+        researchHtml +
+        (i < stations.length - 1 ? '<div class="scroll-next">다음 역으로<span class="arrow">↓</span></div>' : '') +
+      '</div>';
+    storyEl.appendChild(step);
+  });
+
+  // map setup
+  var bounds = L.latLngBounds(stations.map(function (s) { return [s.lat, s.lng]; }));
+  var map = L.map('map', { scrollWheelZoom: false }).fitBounds(bounds, { padding: [40, 40] });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // route line connecting all stations in order
+  L.polyline(stations.map(function (s) { return [s.lat, s.lng]; }), {
+    color: '#17324a', weight: 3, opacity: 0.35, dashArray: '6 6'
+  }).addTo(map);
+
+  var stationLayer = L.layerGroup().addTo(map);
+  var festivalLayer = L.layerGroup().addTo(map);
+
+  // 지하철 역 표지(🚇) 마커
+  function stationIcon() {
+    return L.divIcon({
+      className: '',
+      html: '<div class="station-icon">🚇</div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+  }
+  var baseMarkers = stations.map(function (s) {
+    return L.marker([s.lat, s.lng], { icon: stationIcon() })
+      .addTo(stationLayer)
+      .bindTooltip(s.name, { direction: 'top', offset: [0, -14] });
+  });
+
+  // 활성 역을 감싸는 강조 링(🚇 아이콘 뒤로 표시)
+  var activeMarker = L.circleMarker(bounds.getCenter(), {
+    radius: 16, color: '#2e9e8f', weight: 3, fillColor: '#2e9e8f', fillOpacity: 0.15
+  }).addTo(stationLayer);
+
+  festivals.forEach(function (f) {
+    var cat = FESTIVAL_CATEGORY[f.category];
+    var icon = L.divIcon({
+      className: '',
+      html: '<div class="festival-icon" style="background:' + cat.color + '"><span>' + cat.emoji + '</span></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -28]
+    });
+    var marker = L.marker([f.lat, f.lng], { icon: icon }).addTo(festivalLayer);
+
+    var hostHtml = f.host ? '<div class="fmeta">' + f.host + '</div>' : '';
+
+    marker.bindPopup(
+      '<div class="fpopup">' +
+        '<img src="' + f.image + '" alt="' + f.name + '">' +
+        '<div class="ai-badge">⚠ 실제 현장 사진이 아닌 AI 생성 이미지입니다 (분위기 참고용)</div>' +
+        '<div class="fname">' + f.name + '</div>' +
+        '<span class="fcat" style="background:' + cat.color + '">' + cat.label + '</span>' +
+        '<div class="fmeta">🗓 ' + f.period + '<br>📍 ' + f.location + '</div>' +
+        hostHtml +
+        '<div class="fdesc">' + f.desc + '</div>' +
+      '</div>',
+      { maxWidth: 280, autoPanPadding: [20, 40], maxHeight: 420 }
+    );
+  });
+
+  var legend = L.control({ position: 'bottomright' });
+  legend.onAdd = function () {
+    var div = L.DomUtil.create('div', 'legend');
+    var html = '<div style="font-weight:bold; margin-bottom:4px;">범례</div>';
+    html += '<div><span class="lg-emoji">🚇</span>지하철 역</div>';
+    html += '<div style="font-weight:bold; margin:8px 0 4px;">축제·행사</div>';
+    Object.keys(FESTIVAL_CATEGORY).forEach(function (key) {
+      var c = FESTIVAL_CATEGORY[key];
+      html += '<div><span class="lg-emoji">' + c.emoji + '</span>' + c.label + '</div>';
+    });
+    div.innerHTML = html;
+    return div;
+  };
+  legend.addTo(map);
+
+  L.control.layers(null, {
+    "🚇 역 정보": stationLayer,
+    "🎪 축제·행사": festivalLayer
+  }, { collapsed: false, position: 'topright' }).addTo(map);
+
+  // scrollama
+  var scroller = scrollama();
+
+  function handleStepEnter(response) {
+    document.querySelectorAll('.step').forEach(function (el) { el.classList.remove('active'); });
+    response.element.classList.add('active');
+
+    var s = stations[response.index];
+
+    map.flyTo([s.lat, s.lng], s.zoom, { duration: 1.1 });
+    activeMarker.setLatLng([s.lat, s.lng]);
+
+    baseMarkers.forEach(function (m, i) {
+      var el = m.getElement();
+      if (el) {
+        var icon = el.querySelector('.station-icon');
+        if (icon) icon.classList.toggle('active-st', i === response.index);
+      }
+    });
+  }
+
+  scroller
+    .setup({
+      step: '#story .step',
+      offset: 0.55,
+      progress: false
+    })
+    .onStepEnter(handleStepEnter);
+
+  window.addEventListener('resize', scroller.resize);
+  setTimeout(function () { map.invalidateSize(); }, 200);
+</script>
+</body>
+</html>

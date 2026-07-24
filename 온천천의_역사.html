@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천의 시간 — 역사 타임라인</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="history-data.js"></script>
+<style>
+  :root {
+    --clay: #a5836e; --teal: #2e9e8f; --blue: #2f6f9e;
+    --ink: #1e3a52; --brand-brown: #4a2c15;
+    --serif: "Noto Serif KR", serif;
+    --body-font: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--body-font); color: var(--ink);
+    background: linear-gradient(to bottom, #eaf3f4 0%, #f2f5f0 45%, #f5f1e9 100%);
+  }
+
+  /* ===== 상단 메뉴바 ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 40px;
+    background: rgba(242,245,240,0.88);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(30,58,82,0.10);
+  }
+  .topbar .brand {
+    color: var(--brand-brown); text-decoration: none;
+    font-family: var(--serif);
+    font-size: 17px; letter-spacing: 4px; font-weight: 700;
+  }
+  .topbar .brand .en {
+    display: block; font-size: 10px; letter-spacing: 3px;
+    opacity: 0.7; margin-top: 3px; font-family: sans-serif; font-weight: 400;
+  }
+  .nav-menu { display: flex; gap: 30px; }
+  .nav-menu a {
+    color: #fff; text-decoration: none;
+    font-family: var(--serif); font-size: 15px; letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.35);
+    position: relative; padding: 4px 2px; transition: color .25s;
+  }
+  .nav-menu a::after {
+    content: ""; position: absolute; left: 0; bottom: -3px;
+    width: 0; height: 2px; background: var(--teal); transition: width .3s ease;
+  }
+  .nav-menu a:hover { color: var(--ink); }
+  .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+  .nav-menu a.active { color: var(--teal); font-weight: 700; }
+
+  /* ===== 헤더 ===== */
+  header.hero { text-align: center; padding: 56px 24px 24px; }
+  header.hero h1 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: clamp(28px, 4.5vw, 44px); margin: 0 0 14px;
+    letter-spacing: 1px; color: var(--ink);
+  }
+  header.hero p {
+    max-width: 660px; margin: 0 auto;
+    font-size: 15px; line-height: 1.9; color: #4a5f70;
+  }
+  .phases {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 12px; margin: 26px auto 0; max-width: 760px;
+  }
+  .phase-chip {
+    font-size: 13px; font-weight: bold; color: #fff;
+    padding: 7px 16px; border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .scroll-hint {
+    text-align: center; margin: 30px 0 -6px;
+    font-size: 12.5px; letter-spacing: 2px; color: #8a97a0;
+  }
+
+  /* ===== 가로 타임라인 ===== */
+  .h-scroll {
+    overflow-x: auto; overflow-y: hidden;
+    padding: 26px 0 64px; -webkit-overflow-scrolling: touch;
+  }
+  .h-scroll::-webkit-scrollbar { height: 8px; }
+  .h-scroll::-webkit-scrollbar-thumb { background: #cdd7d3; border-radius: 4px; }
+  .h-track {
+    position: relative; display: flex; width: max-content;
+    padding: 44px 56px 0;
+  }
+  .h-track::before {
+    content: ""; position: absolute; top: 52px; left: 56px; right: 56px;
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right,
+      var(--clay) 0%, var(--clay) 37%,
+      var(--teal) 43%, var(--teal) 69%,
+      var(--blue) 75%, var(--blue) 100%);
+  }
+  .station {
+    flex: 0 0 178px; width: 178px; text-align: center;
+    text-decoration: none; position: relative; cursor: pointer;
+  }
+  .station .dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 4px solid var(--clay); margin: 0 auto;
+    position: relative; z-index: 2;
+    box-shadow: 0 0 0 5px rgba(242,245,240,0.9), 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform .2s ease;
+  }
+  .station .yr {
+    margin-top: 18px; font-family: var(--serif);
+    font-weight: 700; font-size: 15px; color: var(--clay);
+  }
+  .station .ttl {
+    margin-top: 8px; font-size: 12.5px; line-height: 1.55;
+    color: var(--ink); padding: 0 10px;
+  }
+  .station .more {
+    display: inline-block; margin-top: 12px;
+    font-size: 11px; letter-spacing: 1px; color: #9aa7af;
+    opacity: 0; transform: translateY(-3px); transition: .22s ease;
+  }
+  .station:hover .dot { transform: scale(1.35); }
+  .station:hover .ttl { text-decoration: underline; }
+  .station:hover .more { opacity: 1; transform: translateY(0); }
+  .station:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; border-radius: 8px; }
+
+  .p-clay .dot { border-color: var(--clay); } .p-clay .yr { color: var(--clay); } .p-clay .more { color: var(--clay); }
+  .p-teal .dot { border-color: var(--teal); } .p-teal .yr { color: var(--teal); } .p-teal .more { color: var(--teal); }
+  .p-blue .dot { border-color: var(--blue); } .p-blue .yr { color: var(--blue); } .p-blue .more { color: var(--blue); }
+
+  footer.src {
+    background: var(--ink); color: #cfe0ee;
+    font-size: 12px; line-height: 1.8; text-align: center; padding: 30px 40px;
+  }
+
+  @media (max-width: 760px) {
+    .topbar { padding: 12px 20px; flex-wrap: wrap; gap: 8px; }
+    .topbar .brand { font-size: 14px; letter-spacing: 2px; }
+    .nav-menu { gap: 15px; }
+    .nav-menu a { font-size: 12px; letter-spacing: 1px; }
+    .station { flex-basis: 150px; width: 150px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    온천천 아카이브
+    <span class="en">ONCHEONCHEON ARCHIVE</span>
+  </a>
+  <nav class="nav-menu">
+    <a href="온천천의_역사.html" class="active">역사</a>
+    <a href="storymap.html">지도</a>
+    <a href="온천천%20아카이브.html">안내책자</a>
+    <a href="온천천의_수생생물.html">수생생물</a>
+    <a href="온천천의_시민참여.html">시민 참여</a>
+    <a href="온천천의_AI질문.html">AI에게 질문</a>
+  </nav>
+</header>
+
+<header class="hero">
+  <h1>온천천의 시간</h1>
+  <p>일제강점기 치수 공사부터 도심화·복개, 생태하천 복원, 수달의 재등장과
+  국가하천 승격까지 — 부산 온천천이 지나온 주요 역사 12장면입니다.
+  아래 타임라인에서 궁금한 장면을 누르면 자세한 이야기와 사진을 볼 수 있어요.</p>
+
+  <div class="phases">
+    <span class="phase-chip" style="background:#a5836e">개발·훼손기 (1907~1996)</span>
+    <span class="phase-chip" style="background:#2e9e8f">복원운동기 (1995~2013)</span>
+    <span class="phase-chip" style="background:#2f6f9e">회복·제도화기 (2017~2024)</span>
+  </div>
+</header>
+
+<div class="scroll-hint">← 좌우로 넘겨 12장면을 살펴보세요 →</div>
+
+<div class="h-scroll">
+  <div class="h-track" id="track"></div>
+</div>
+
+<footer class="src">
+  본 자료는 공개된 뉴스보도·지자체 발표자료·나무위키 등을 바탕으로 재정리한 디지털 인문학 연구용 데이터입니다.<br>
+  일부 세부 연도(특히 일제강점기 개별 공사 시점)는 1차 사료 대조가 추가로 필요할 수 있습니다.
+</footer>
+
+<script>
+  var events = window.ONCHEON_HISTORY || [];
+  var track = document.getElementById('track');
+
+  events.forEach(function (e, i) {
+    var a = document.createElement('a');
+    a.className = 'station p-' + e.phase;
+    a.href = '온천천의_역사_상세.html?e=' + i;
+    a.innerHTML =
+      '<div class="dot"></div>' +
+      '<div class="yr">' + e.year + '</div>' +
+      '<div class="ttl">' + e.title + '</div>' +
+      '<span class="more">자세히 보기 →</span>';
+    track.appendChild(a);
+  });
+</script>
+</body>
+</html>

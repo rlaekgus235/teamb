@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천 생물 워드클라우드</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --accent:#1f7a4d; --text:#28303a; --muted:#727a72; --line:#e7e5df; --bg:#eef0ec;
+    --fish:#2B6CB0; --bug:#0f8a7a; --bird:#3f95c2; --plant:#38A169; --other:#c0472f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  body { display: flex; justify-content: center; align-items: flex-start; padding: 32px 16px; min-height: 100vh; }
+  a { color: var(--accent); }
+
+  .popup {
+    background: #fff; width: 100%; max-width: 1080px; border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.14); overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .titlebar h1 { margin: 0; font-size: 15px; }
+  .close-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--bg);
+    color: var(--muted); font-size: 13px; cursor: pointer; flex-shrink: 0;
+  }
+  .close-btn:hover { background: #e2e2dc; color: var(--text); }
+
+  .popup-body { padding: 20px 22px 26px; }
+  p.lead { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0 0 16px; }
+
+  .note-box {
+    border: 1px solid var(--line); padding: 11px 14px; font-size: 11.5px; line-height: 1.7;
+    color: #444; border-radius: 8px; margin-bottom: 16px;
+  }
+  .note-box b { color: var(--text); }
+
+  .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .filter-btn {
+    font-family: inherit; font-size: 12px; font-weight: bold; padding: 6px 13px; border-radius: 16px;
+    border: 1px solid var(--line); background: #fff; color: var(--text); cursor: pointer;
+  }
+  .filter-btn:hover { background: var(--bg); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; font-size: 11px; color: var(--muted); }
+  .legend .item { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .cloud-wrap { border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+  #cloudSvg { width: 100%; height: auto; display: block; }
+  #cloudSvg text { cursor: default; font-family: "Malgun Gothic","Apple SD Gothic Neo",sans-serif; }
+  #cloudSvg text:hover { opacity: 0.65; }
+
+  .disclaimer { margin-top: 18px; font-size: 10.5px; color: #a2a89f; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="popup">
+  <div class="titlebar">
+    <h1>☁ 온천천 생물 워드클라우드</h1>
+    <button class="close-btn" onclick="window.close()">✕</button>
+  </div>
+  <div class="popup-body">
+    <p class="lead">「부산 온천천의 생물」 하천 생태 가이드북(부산광역시 보건환경연구원, 2022)에 실린 어류·저서성무척추동물·조류·식물·기타생물을 한눈에 모았습니다. 글자가 클수록 가이드북에서 "흔하다"고 서술된 생물입니다.</p>
+
+    <div class="note-box">
+      <b>⚠ 안내</b> 글자 크기는 가이드북 본문의 서술("아주 흔하게", "드물게" 등)을 기준으로 매긴 <b>상대적 빈도 추정치</b>이며, 정밀한 개체수 조사 수치가 아닙니다.
+    </div>
+
+    <div class="filter-row" id="filterRow"></div>
+
+    <div class="legend">
+      <span class="item"><span class="dot" style="background:var(--fish)"></span>어류</span>
+      <span class="item"><span class="dot" style="background:var(--bug)"></span>저서성 무척추동물</span>
+      <span class="item"><span class="dot" style="background:var(--bird)"></span>조류</span>
+      <span class="item"><span class="dot" style="background:var(--plant)"></span>식물</span>
+      <span class="item"><span class="dot" style="background:var(--other)"></span>기타생물(수달·양서류·파충류)</span>
+    </div>
+
+    <div class="cloud-wrap">
+      <svg id="cloudSvg" viewBox="0 0 1300 850" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div class="disclaimer">
+      출처: 「부산 온천천의 생물 — 하천 생태 가이드북」 부산광역시 보건환경연구원 (2022.4 발행)<br>
+      ⚠ 실제 서식 현황은 계절과 조사 시점에 따라 달라질 수 있습니다.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= 데이터: 부산 온천천의 생물 가이드북 기준 ================= */
+/* v(가중치): 가이드북 서술("아주 흔하게"=8~10, "흔하게"=6~8, "간혹/드물게"=3~4)을 기준으로 추정 */
+var speciesData = [
+  // 어류 (fish)
+  {w:'버들치', v:9, c:'fish'}, {w:'참갈겨니', v:9, c:'fish'}, {w:'숭어', v:8, c:'fish'},
+  {w:'잉어', v:8, c:'fish'}, {w:'붕어', v:8, c:'fish'}, {w:'미꾸리', v:5, c:'fish'},
+  {w:'뱀장어', v:5, c:'fish'}, {w:'동사리', v:4, c:'fish'}, {w:'참붕어', v:4, c:'fish'},
+  {w:'꺽지', v:3, c:'fish'}, {w:'가물치', v:3, c:'fish'}, {w:'은어', v:3, c:'fish'},
+
+  // 저서성 대형무척추동물 (bug)
+  {w:'개똥하루살이', v:8, c:'bug'}, {w:'깔따구류', v:8, c:'bug'}, {w:'쇠측범잠자리', v:8, c:'bug'},
+  {w:'민강도래', v:7, c:'bug'}, {w:'꼬마줄날도래', v:8, c:'bug'}, {w:'먹파리', v:7, c:'bug'},
+  {w:'나방파리', v:6, c:'bug'}, {w:'실지렁이', v:7, c:'bug'}, {w:'왼돌이물달팽이', v:6, c:'bug'},
+  {w:'물달팽이', v:6, c:'bug'}, {w:'물벌레', v:6, c:'bug'}, {w:'돌거머리', v:6, c:'bug'},
+  {w:'참납작하루살이', v:6, c:'bug'}, {w:'등줄하루살이', v:6, c:'bug'}, {w:'뱀잠자리불이', v:6, c:'bug'},
+  {w:'흰부채하루살이', v:6, c:'bug'}, {w:'부채하루살이', v:6, c:'bug'}, {w:'네점하루살이', v:5, c:'bug'},
+  {w:'붉은깔따구', v:6, c:'bug'}, {w:'다슬기', v:5, c:'bug'}, {w:'주름다슬기', v:5, c:'bug'},
+  {w:'갈색넙적거머리', v:5, c:'bug'}, {w:'조개넙적거머리', v:4, c:'bug'}, {w:'수정또아리물달팽이', v:5, c:'bug'},
+  {w:'애날도래', v:5, c:'bug'}, {w:'검은머리물날도래', v:4, c:'bug'}, {w:'네모집날도래', v:5, c:'bug'},
+  {w:'옆새우', v:5, c:'bug'}, {w:'가재', v:5, c:'bug'}, {w:'줄새우', v:5, c:'bug'},
+  {w:'납작게', v:5, c:'bug'}, {w:'세갈래하루살이', v:5, c:'bug'}, {w:'무늬하루살이', v:5, c:'bug'},
+  {w:'알락하루살이', v:5, c:'bug'}, {w:'여울벌레', v:5, c:'bug'}, {w:'애기각다귀', v:4, c:'bug'},
+  {w:'각다귀', v:4, c:'bug'}, {w:'긴개울등에', v:4, c:'bug'}, {w:'별모기', v:4, c:'bug'},
+  {w:'너도나방파리', v:4, c:'bug'}, {w:'등에모기', v:4, c:'bug'}, {w:'일본가시날도래', v:4, c:'bug'},
+  {w:'줄날도래', v:4, c:'bug'}, {w:'청나비날도래', v:4, c:'bug'}, {w:'진강도래', v:4, c:'bug'},
+  {w:'녹색강도래', v:4, c:'bug'}, {w:'애호랑하루살이', v:4, c:'bug'}, {w:'명주각다귀', v:3, c:'bug'},
+  {w:'아가미지렁이', v:3, c:'bug'}, {w:'민물삿갓조개', v:3, c:'bug'}, {w:'뾰족쨈물우렁이', v:3, c:'bug'},
+  {w:'또아리물달팽이', v:3, c:'bug'}, {w:'재첩', v:3, c:'bug'}, {w:'어리장수잠자리', v:3, c:'bug'},
+  {w:'된장잠자리', v:4, c:'bug'}, {w:'아시아실잠자리', v:3, c:'bug'}, {w:'민하루살이', v:3, c:'bug'},
+  {w:'등딱지하루살이', v:5, c:'bug'}, {w:'입술날도래', v:4, c:'bug'}, {w:'바수염날도래', v:4, c:'bug'},
+  {w:'집모기', v:4, c:'bug'}, {w:'얼룩날개모기', v:4, c:'bug'}, {w:'플라나리아', v:5, c:'bug'},
+
+  // 조류 (bird)
+  {w:'쇠백로', v:8, c:'bird'}, {w:'왜가리', v:8, c:'bird'}, {w:'민물가마우지', v:6, c:'bird'},
+  {w:'붉은부리갈매기', v:6, c:'bird'}, {w:'흰뺨검둥오리', v:6, c:'bird'}, {w:'알락할미새', v:6, c:'bird'},
+  {w:'청둥오리', v:5, c:'bird'}, {w:'쇠오리', v:5, c:'bird'}, {w:'물닭', v:5, c:'bird'},
+  {w:'알락오리', v:5, c:'bird'}, {w:'흰죽지', v:5, c:'bird'},
+
+  // 식물 (plant)
+  {w:'토끼풀', v:8, c:'plant'}, {w:'서양민들레', v:8, c:'plant'}, {w:'환삼덩굴', v:8, c:'plant'},
+  {w:'갈대', v:8, c:'plant'}, {w:'갓', v:8, c:'plant'}, {w:'물억새', v:8, c:'plant'},
+  {w:'개여뀌', v:8, c:'plant'}, {w:'흰여뀌', v:8, c:'plant'}, {w:'소리쟁이', v:8, c:'plant'},
+  {w:'드렁방동사니', v:7, c:'plant'}, {w:'왕바랭이', v:7, c:'plant'}, {w:'큰물칭개나물', v:7, c:'plant'},
+  {w:'말즘', v:6, c:'plant'}, {w:'고마리', v:6, c:'plant'}, {w:'큰비짜루국화', v:6, c:'plant'},
+  {w:'쇠별꽃', v:5, c:'plant'}, {w:'덩이괭이밥', v:5, c:'plant'}, {w:'선괭이밥', v:5, c:'plant'},
+  {w:'개구리자리', v:4, c:'plant'}, {w:'꽃마리', v:4, c:'plant'}, {w:'살갈퀴', v:4, c:'plant'},
+  {w:'애기똥풀', v:4, c:'plant'}, {w:'큰개불알풀', v:4, c:'plant'}, {w:'닭의장풀', v:4, c:'plant'},
+  {w:'흰꽃나도사프란', v:3, c:'plant'}, {w:'주름잎', v:3, c:'plant'}, {w:'이고들빼기', v:3, c:'plant'},
+  {w:'메꽃', v:4, c:'plant'}, {w:'이질풀', v:3, c:'plant'}, {w:'참외', v:3, c:'plant'},
+  {w:'냉이', v:4, c:'plant'}, {w:'덩굴개별꽃', v:3, c:'plant'}, {w:'큰고랭이', v:5, c:'plant'},
+  {w:'배초향', v:3, c:'plant'}, {w:'미국수련', v:3, c:'plant'},
+
+  // 기타생물 (other)
+  {w:'수달', v:10, c:'other'}, {w:'두꺼비', v:6, c:'other'}, {w:'자라', v:5, c:'other'}, {w:'옴개구리', v:5, c:'other'}
+];
+
+var CATEGORY_LABEL = { fish:'어류', bug:'저서성 무척추동물', bird:'조류', plant:'식물', other:'기타생물' };
+var CATEGORY_COLOR = {
+  fish: getVar('--fish'), bug: getVar('--bug'), bird: getVar('--bird'),
+  plant: getVar('--plant'), other: getVar('--other')
+};
+function getVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ================= 필터 버튼 ================= */
+var filters = [
+  {key:'all', label:'전체'}, {key:'fish', label:'어류'}, {key:'bug', label:'저서성 무척추동물'},
+  {key:'bird', label:'조류'}, {key:'plant', label:'식물'}, {key:'other', label:'기타생물'}
+];
+var filterRow = document.getElementById('filterRow');
+filters.forEach(function(f){
+  var btn = document.createElement('button');
+  btn.className = 'filter-btn' + (f.key === 'all' ? ' active' : '');
+  btn.textContent = f.label;
+  btn.dataset.key = f.key;
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    var list = f.key === 'all' ? speciesData : speciesData.filter(function(s){ return s.c === f.key; });
+    renderCloud(list);
+  });
+  filterRow.appendChild(btn);
+});
+
+/* ================= 워드클라우드 스파이럴 배치 ================= */
+var svg = document.getElementById('cloudSvg');
+var SVG_NS = 'http://www.w3.org/2000/svg';
+var W = 1300, H = 850, CX = W/2, CY = H/2;
+
+function renderCloud(list){
+  svg.innerHTML = '';
+  if (!list.length){
+    var msg = document.createElementNS(SVG_NS, 'text');
+    msg.setAttribute('x', CX); msg.setAttribute('y', CY);
+    msg.setAttribute('text-anchor', 'middle');
+    msg.setAttribute('font-size', 18);
+    msg.setAttribute('fill', '#888');
+    msg.textContent = '표시할 생물이 없습니다.';
+    svg.appendChild(msg);
+    return;
+  }
+
+  var minV = Math.min.apply(null, list.map(function(s){ return s.v; }));
+  var maxV = Math.max.apply(null, list.map(function(s){ return s.v; }));
+  var minFont = 12, maxFont = 58;
+
+  var sorted = list.slice().sort(function(a,b){
+    return (b.v + Math.random()*0.01) - (a.v + Math.random()*0.01);
+  });
+
+  var placed = [];
+
+  sorted.forEach(function(item){
+    var ratio = maxV === minV ? 1 : (item.v - minV) / (maxV - minV);
+    var fontSize = minFont + ratio * (maxFont - minFont);
+    var rotate = Math.random() < 0.22;
+
+    var text = document.createElementNS(SVG_NS, 'text');
+    text.setAttribute('x', 0);
+    text.setAttribute('y', 0);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'central');
+    text.setAttribute('font-size', fontSize);
+    text.setAttribute('font-weight', item.v >= 7 ? '900' : 'bold');
+    text.setAttribute('fill', CATEGORY_COLOR[item.c]);
+    text.textContent = item.w;
+    var titleEl = document.createElementNS(SVG_NS, 'title');
+    titleEl.textContent = item.w + ' · ' + CATEGORY_LABEL[item.c];
+    text.appendChild(titleEl);
+    svg.appendChild(text);
+
+    var bbox = text.getBBox();
+    var padding = 3;
+    var effW = (rotate ? bbox.height : bbox.width) + padding * 2;
+    var effH = (rotate ? bbox.width : bbox.height) + padding * 2;
+
+    var angle = 0;
+    var found = false;
+    var px = CX, py = CY;
+
+    for (var i = 0; i < 8000; i++){
+      var radius = 1.5 * angle;
+      px = CX + radius * Math.cos(angle);
+      py = CY + radius * Math.sin(angle) * 0.72;
+      var x0 = px - effW/2, x1 = px + effW/2, y0 = py - effH/2, y1 = py + effH/2;
+
+      if (x0 >= 4 && x1 <= W-4 && y0 >= 4 && y1 <= H-4){
+        var overlap = placed.some(function(b){
+          return !(x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+        });
+        if (!overlap){ found = true; break; }
+      }
+      angle += 0.18;
+    }
+
+    if (found){
+      text.setAttribute('x', px);
+      text.setAttribute('y', py);
+      if (rotate){ text.setAttribute('transform', 'rotate(-90 ' + px + ' ' + py + ')'); }
+      placed.push({ x0: px-effW/2, y0: py-effH/2, x1: px+effW/2, y1: py+effH/2 });
+    } else {
+      svg.removeChild(text);
+    }
+  });
+}
+
+renderCloud(speciesData);
+</script>
+
+</body>
+</html>

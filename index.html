@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천 아카이브</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* 배경 사진 경로만 여기서 바꾸면 됩니다 */
+    --hero-image: url("온천천 이미지.webp");
+    --accent: #d94a3d;        /* 천·온 강조 붉은색 */
+    --brand-brown: #4a2c15;   /* 사이트명 진한 갈색 */
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  .hero {
+    position: relative;
+    height: 100vh;
+    min-height: 560px;
+    width: 100%;
+    overflow: hidden;
+    font-family: "Noto Serif KR", serif;
+  }
+
+  /* 배경 사진 */
+  .hero .bg {
+    position: absolute; inset: 0;
+    background: var(--hero-image) center/cover no-repeat;
+    /* 아주 옅게 살아있는 물빛 느낌 */
+    animation: slowZoom 20s ease-out forwards;
+  }
+  @keyframes slowZoom {
+    from { transform: scale(1.06); }
+    to   { transform: scale(1); }
+  }
+
+  /* 하늘하늘한 물빛 오버레이 — 위는 맑게, 아래로 갈수록 은은한 강물빛 */
+  .hero .wash {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to bottom,
+        rgba(255,255,255,0.10) 0%,
+        rgba(176,214,224,0.12) 38%,
+        rgba(74,120,150,0.34) 78%,
+        rgba(30,58,82,0.55) 100%);
+  }
+  /* 중앙 문구 뒤로 살짝 번지는 부드러운 빛 */
+  .hero .glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 55% at 50% 62%,
+      rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 60%);
+  }
+
+  /* 상단 메뉴바 */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 4;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 44px;
+  }
+  .brand {
+    color: var(--brand-brown); text-decoration: none;
+    font-family: "Noto Serif KR", serif;
+    font-size: 17px; letter-spacing: 4px; font-weight: 700;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6);
+  }
+  .brand .en {
+    display: block; font-size: 11px; letter-spacing: 3px;
+    opacity: 0.75; margin-top: 4px; font-family: sans-serif; font-weight: 400;
+  }
+  .nav-menu { display: flex; gap: 34px; }
+  .nav-menu a {
+    color: #fff; text-decoration: none;
+    font-family: "Noto Serif KR", serif; font-size: 15px; letter-spacing: 2px;
+    position: relative; padding: 4px 2px; opacity: 0.95;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6), 0 0 10px rgba(0,0,0,0.4); transition: opacity .25s;
+  }
+  .nav-menu a::after {
+    content: ""; position: absolute; left: 0; bottom: -3px;
+    width: 0; height: 2px; background: var(--accent); transition: width .3s ease;
+  }
+  .nav-menu a:hover { opacity: 1; }
+  .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+
+  /* 떨어지는 꽃잎 */
+  .petals { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+  .petal { position: absolute; top: -8%; animation: petalFall linear infinite; }
+  .petal > i {
+    display: block; border-radius: 150% 0 150% 0;
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.45);
+    animation: petalSway ease-in-out infinite alternate;
+  }
+  @keyframes petalFall {
+    0%   { transform: translateY(-10vh); opacity: 0; }
+    8%   { opacity: 0.95; }
+    100% { transform: translateY(110vh); opacity: 0.9; }
+  }
+  @keyframes petalSway {
+    from { transform: translateX(-14px) rotate(0deg); }
+    to   { transform: translateX(16px) rotate(360deg); }
+  }
+
+  /* 중앙 문구 */
+  .hero .center {
+    position: relative; z-index: 3;
+    height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 0 24px;
+  }
+  .hero .title {
+    color: #fff;
+    font-size: clamp(26px, 5vw, 52px);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 18px rgba(20,40,60,0.55);
+    opacity: 0; transform: translateY(22px);
+    animation: rise 1.4s ease 0.3s forwards;
+  }
+  .hero .title .hl {
+    color: var(--accent);
+    font-weight: 700;
+    text-shadow: 0 2px 16px rgba(120,20,10,0.35);
+  }
+  .hero .title .han {
+    font-size: 0.62em;
+    vertical-align: 0.08em;
+    opacity: 0.9;
+  }
+  .hero .subtitle {
+    color: var(--brand-brown);
+    font-size: clamp(16px, 2.2vw, 20px);
+    font-weight: 700;
+    letter-spacing: 2px; margin-top: 26px; line-height: 1.7;
+    text-shadow: 0 1px 3px rgba(255,255,255,0.9), 0 0 14px rgba(255,255,255,0.6);
+    opacity: 0; transform: translateY(22px);
+    animation: rise 1.4s ease 0.7s forwards;
+  }
+  .hero .subtitle .sub-line2 {
+    display: block; font-size: 0.72em; font-weight: 500; letter-spacing: 1px;
+    margin-top: 8px; opacity: 0.92;
+  }
+  @keyframes rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 아래로 스크롤 안내 (다음 페이지로 이동) */
+  .scroll-ind {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    z-index: 3; color: #fff; text-align: center;
+    font-size: 11px; letter-spacing: 2px; font-family: sans-serif;
+    text-decoration: none; cursor: pointer;
+    opacity: 0; animation: fadeIn 1.2s ease 1.4s forwards;
+    transition: transform 0.3s ease;
+  }
+  .scroll-ind:hover { transform: translateX(-50%) translateY(4px); }
+  .scroll-ind .mouse {
+    width: 22px; height: 34px; border: 2px solid rgba(255,255,255,0.8);
+    border-radius: 12px; margin: 0 auto 8px; position: relative;
+  }
+  .scroll-ind .mouse::after {
+    content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 3px; height: 7px; background: #fff; border-radius: 2px;
+    animation: wheel 1.6s ease-in-out infinite;
+  }
+  @keyframes wheel {
+    0% { top: 6px; opacity: 1; }
+    100% { top: 16px; opacity: 0; }
+  }
+  @keyframes fadeIn { to { opacity: 0.9; } }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 16px 20px; flex-wrap: wrap; gap: 10px; }
+    .brand { font-size: 13px; letter-spacing: 2px; }
+    .nav-menu { gap: 16px; }
+    .nav-menu a { font-size: 12px; letter-spacing: 1px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero .bg, .hero .title, .hero .subtitle, .scroll-ind { animation: none; }
+    .hero .title, .hero .subtitle, .scroll-ind { opacity: 1; transform: translateX(-50%); }
+    .hero .title, .hero .subtitle { transform: none; }
+    .petals { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="bg"></div>
+    <div class="wash"></div>
+    <div class="glow"></div>
+    <div class="petals"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        온천천 아카이브
+        <span class="en">ONCHEONCHEON ARCHIVE</span>
+      </a>
+      <nav class="nav-menu">
+        <a href="온천천의_역사.html">역사</a>
+        <a href="storymap.html">지도</a>
+        <a href="온천천%20아카이브.html">안내책자</a>
+        <a href="온천천의_수생생물.html">수생생물</a>
+        <a href="온천천의_시민참여.html">시민 참여</a>
+        <a href="온천천의_AI질문.html">AI에게 질문</a>
+      </nav>
+    </header>
+
+    <div class="center">
+      <h1 class="title">
+        <span class="hl">천<span class="han">(千)</span></span> 번의 계절을 지나,<br>
+        <span class="hl">온<span class="han">(溫)</span></span>전히 흐르는 이야기
+      </h1>
+      <p class="subtitle">부산 온천천, 물길을 따라 흐르는 기록
+        <span class="sub-line2">역사와 생태, 지도와 이야기로 만나는 온천천 디지털 아카이브</span>
+      </p>
+    </div>
+
+    <a class="scroll-ind" href="온천천의_수생생물.html">
+      <div class="mouse"></div>
+      SCROLL
+    </a>
+  </section>
+
+  <script>
+    /* 떨어지는 꽃잎 생성 */
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var wrap = document.querySelector('.petals');
+      if (!wrap) return;
+      var cols = [
+        'linear-gradient(135deg,#ffe3ee,#f7abc8)',
+        'linear-gradient(135deg,#ffffff,#ffd4e5)',
+        'linear-gradient(135deg,#ffd0e1,#ef9dbc)'
+      ];
+      for (var i = 0; i < 22; i++) {
+        var p = document.createElement('span'); p.className = 'petal';
+        var leaf = document.createElement('i');
+        var s = 8 + Math.random() * 9;
+        leaf.style.width = s + 'px'; leaf.style.height = s + 'px';
+        leaf.style.background = cols[i % 3];
+        leaf.style.animationDuration = (2.4 + Math.random() * 2.6) + 's';
+        leaf.style.animationDelay = (-Math.random() * 4) + 's';
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.animationDuration = (6 + Math.random() * 8) + 's';
+        p.style.animationDelay = (-Math.random() * 13) + 's';
+        p.appendChild(leaf); wrap.appendChild(p);
+      }
+    })();
+  </script>
+
+</body>
+</html>

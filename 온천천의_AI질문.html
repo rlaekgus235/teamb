@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>온천천에게 물어보기 — AI 도우미</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="history-data.js"></script>
+<style>
+  :root {
+    --accent: #d94a3d; --leaf: #2e9e8f; --ink: #1e3a52; --brand-brown: #4a2c15;
+    --serif: "Noto Serif KR", serif;
+    --body-font: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--body-font); color: var(--ink);
+    background: linear-gradient(to bottom, #eef3ec 0%, #f2f5f0 60%, #f5f1e9 100%);
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  /* ===== 상단 메뉴바 ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 40px;
+    background: rgba(242,245,240,0.9);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(30,58,82,0.10);
+  }
+  .topbar .brand {
+    color: var(--brand-brown); text-decoration: none; font-family: var(--serif);
+    font-size: 17px; letter-spacing: 4px; font-weight: 700;
+  }
+  .topbar .brand .en {
+    display: block; font-size: 10px; letter-spacing: 3px;
+    opacity: 0.7; margin-top: 3px; font-family: sans-serif; font-weight: 400;
+  }
+  .nav-menu { display: flex; gap: 30px; }
+  .nav-menu a {
+    color: #fff; text-decoration: none; font-family: var(--serif);
+    font-size: 15px; letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.35);
+    position: relative; padding: 4px 2px; transition: color .25s;
+  }
+  .nav-menu a::after {
+    content: ""; position: absolute; left: 0; bottom: -3px;
+    width: 0; height: 2px; background: var(--leaf); transition: width .3s ease;
+  }
+  .nav-menu a:hover { color: var(--ink); }
+  .nav-menu a:hover::after, .nav-menu a.active::after { width: 100%; }
+  .nav-menu a.active { color: var(--leaf); font-weight: 700; }
+
+  /* ===== 헤더 ===== */
+  .ai-head { text-align: center; padding: 40px 24px 8px; }
+  .ai-head h1 { font-family: var(--serif); font-size: clamp(24px,4vw,34px); margin: 0 0 8px; }
+  .ai-head p { margin: 0; font-size: 14px; color: #5a7080; line-height: 1.7; }
+
+  /* ===== 채팅 영역 ===== */
+  .chat-wrap {
+    flex: 1; width: 100%; max-width: 760px; margin: 0 auto;
+    padding: 14px 18px 0; display: flex; flex-direction: column;
+  }
+  .chat {
+    flex: 1; overflow-y: auto; padding: 14px 4px 6px;
+    display: flex; flex-direction: column; gap: 14px; min-height: 260px;
+  }
+  .msg { display: flex; gap: 10px; max-width: 90%; }
+  .msg .av {
+    flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .msg .bubble {
+    padding: 12px 15px; border-radius: 14px; font-size: 16.5px; line-height: 1.75;
+  }
+  .msg.bot { align-self: flex-start; }
+  .msg.bot .av { background: #dff0e9; }
+  .msg.bot .bubble { background: #fff; border: 1px solid #e4ede8; border-top-left-radius: 4px; box-shadow: 0 2px 8px rgba(30,58,82,0.06); }
+  .msg.me { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.me .av { background: #e7e1d6; }
+  .msg.me .bubble { background: #17324a; color: #fff; border-top-right-radius: 4px; }
+  .bubble b { color: inherit; }
+  .msg.bot .bubble b { color: var(--ink); }
+  .bubble .ans-meta { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--leaf); font-weight: bold; }
+  .bubble a.golink {
+    display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: bold;
+    color: var(--leaf); text-decoration: none; border: 1px solid #cbe6dd;
+    background: #f1faf7; border-radius: 20px; padding: 4px 12px;
+  }
+  .bubble a.golink:hover { background: #e3f5ee; }
+  .bubble .typing span {
+    display: inline-block; width: 7px; height: 7px; margin: 0 1px; border-radius: 50%;
+    background: #9fb8ae; animation: blink 1.2s infinite;
+  }
+  .bubble .typing span:nth-child(2){ animation-delay:.2s; }
+  .bubble .typing span:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink { 0%,60%,100%{opacity:.25;} 30%{opacity:1;} }
+
+  /* 추천 질문 */
+  .suggests { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 4px 0; }
+  .suggests button {
+    font-family: var(--body-font); font-size: 15.5px; font-weight: bold; color: var(--ink);
+    background: #fff; border: 1px solid #dbe6df; border-radius: 20px;
+    padding: 9px 16px; cursor: pointer; transition: .2s;
+  }
+  .suggests button:hover { background: #eef7f3; border-color: var(--leaf); }
+
+  /* 입력창 */
+  .composer {
+    position: sticky; bottom: 0; background: linear-gradient(to top, #f5f1e9, rgba(245,241,233,0.6));
+    padding: 12px 4px 16px; display: flex; gap: 10px;
+  }
+  .composer input {
+    flex: 1; font-family: var(--body-font); font-size: 16.5px; color: var(--ink);
+    padding: 13px 16px; border: 1px solid #cdd9d1; border-radius: 26px;
+    background: #fff; outline: none;
+  }
+  .composer input:focus { border-color: var(--leaf); box-shadow: 0 0 0 3px rgba(46,158,143,0.12); }
+  .composer button.send {
+    flex: 0 0 auto; font-family: var(--body-font); font-weight: bold; font-size: 14px;
+    color: #fff; background: var(--leaf); border: none; border-radius: 26px;
+    padding: 0 22px; cursor: pointer; transition: .2s;
+  }
+  .composer button.send:hover { background: #268a7d; }
+
+  footer.src {
+    background: var(--ink); color: #cfe0ee;
+    font-size: 12px; line-height: 1.8; text-align: center; padding: 22px 40px;
+  }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 12px 20px; flex-wrap: wrap; gap: 8px; }
+    .topbar .brand { font-size: 14px; letter-spacing: 2px; }
+    .nav-menu { gap: 15px; } .nav-menu a { font-size: 12px; letter-spacing: 1px; }
+    .msg { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    온천천 아카이브
+    <span class="en">ONCHEONCHEON ARCHIVE</span>
+  </a>
+  <nav class="nav-menu">
+    <a href="온천천의_역사.html">역사</a>
+    <a href="storymap.html">지도</a>
+    <a href="온천천%20아카이브.html">안내책자</a>
+    <a href="온천천의_수생생물.html">수생생물</a>
+    <a href="온천천의_시민참여.html">시민 참여</a>
+    <a href="온천천의_AI질문.html" class="active">AI에게 질문</a>
+  </nav>
+</header>
+
+<div class="ai-head">
+  <h1>🌿 온천천에게 물어보기</h1>
+  <p>온천천의 수생생물과 역사에 대해 궁금한 점을 물어보세요.<br>사이트에 정리된 자료를 바탕으로 답해 드립니다.</p>
+</div>
+
+<div class="chat-wrap">
+  <div class="chat" id="chat"></div>
+  <div class="suggests" id="suggests"></div>
+  <form class="composer" id="composer" autocomplete="off">
+    <input id="q" type="text" placeholder="예) 수달은 어디에 살아? / 온천천 역사 알려줘" aria-label="질문 입력">
+    <button class="send" type="submit">보내기</button>
+  </form>
+</div>
+
+<footer class="src">
+  이 도우미는 사이트에 정리된 <b>온천천 수생생물·역사 자료</b> 안에서 답을 찾아드립니다.<br>
+  자료 밖의 질문에는 답하기 어려울 수 있어요. · 부산광역시 보건환경연구원 자료 기반
+</footer>
+
+<script>
+/* =========================================================
+   온천천 AI 도우미 — 하이브리드 구조
+   ---------------------------------------------------------
+   현재: 아래 지식기반(knowledge base)에서 질문과 가장 잘 맞는
+         답을 찾아 돌려줍니다. (서버·API 키 불필요, 완전 정적)
+
+   나중에 진짜 생성형 AI(Claude)로 확장하려면:
+     1) Vercel/Netlify/Cloudflare 등에 작은 서버리스 함수를 만들어
+        ANTHROPIC_API_KEY 를 서버에만 보관하고,
+        Claude Messages API(POST https://api.anthropic.com/v1/messages,
+        model: "claude-opus-4-8")를 호출해 { answer } 를 돌려주게 합니다.
+        ※ 정적 HTML에 API 키를 직접 넣으면 안 됩니다(누구나 훔쳐 씀).
+     2) 아래 AI_CONFIG.endpoint 에 그 함수 주소를 넣으면,
+        먼저 진짜 AI로 답을 시도하고 실패 시 지식기반으로 자동 폴백합니다.
+   ========================================================= */
+  var AI_CONFIG = { endpoint: "" }; // 예: "/api/ask" (준비되면 채우기)
+
+  /* ---------- 지식기반: 수생생물 ---------- */
+  var SPECIES = [
+    { id:"beodeulchi", name:"버들치", group:"어류", reach:"최상류 ~ 구서역",
+      blurb:"온천천 최상류의 맑은 계곡에서 무리 지어 삽니다. 8~15cm 크기로 부착조류와 수서곤충을 먹어요.", kw:["버들치"] },
+    { id:"chamgalgeoni", name:"참갈겨니", group:"어류", reach:"상류 ~ 장전역",
+      blurb:"상류부터 장전역까지 맑은 물에 풍부합니다. 수컷은 산란기에 붉고 화려한 혼인색을 띱니다.", kw:["참갈겨니","갈겨니"] },
+    { id:"dongsari", name:"동사리", group:"어류", reach:"상류 계곡",
+      blurb:"한국 고유종으로 상류 돌 밑에 숨어 삽니다. 야행성이며 산란기에 '구구' 소리를 내요.", kw:["동사리"] },
+    { id:"kkeokji", name:"꺽지", group:"어류", reach:"상류 계곡",
+      blurb:"상류 바위 계곡에 사는 육식 물고기예요. 입이 크고 아가미 뒤의 파란 점이 특징입니다.", kw:["꺽지"] },
+    { id:"mikkuri", name:"미꾸리", group:"어류", reach:"중류 ~ 하류",
+      blurb:"중·하류 수초 사이에 살며 수질 변화에 강합니다. 미꾸라지와 닮았지만 몸이 더 둥글어요.", kw:["미꾸리"] },
+    { id:"ingeo", name:"잉어", group:"어류", reach:"중류 ~ 하류",
+      blurb:"중·하류에서 아주 흔하며 60cm까지 자랍니다. 입가에 2쌍의 수염이 있는 것이 특징이에요.", kw:["잉어"] },
+    { id:"bungeo", name:"붕어", group:"어류", reach:"중류 ~ 하류",
+      blurb:"잉어와 함께 중·하류에 흔한 잡식성 물고기로 30cm까지 자라며 오염에 강합니다.", kw:["붕어"] },
+    { id:"daseulgi", name:"다슬기", group:"저서동물", reach:"상류",
+      blurb:"맑고 빠른 상류 물에 살며 돌에 붙은 부착조류를 먹어요. 뾰족하고 긴 껍데기를 가졌습니다.", kw:["다슬기"] },
+    { id:"muldalpaengi", name:"물달팽이", group:"저서동물", reach:"전 구간",
+      blurb:"온천천 대부분 지점의 돌 표면에 붙어 사는 잡식성 달팽이로, 계란 모양 껍데기를 가졌어요.", kw:["물달팽이","달팽이"] },
+    { id:"soebaengno", name:"쇠백로", group:"조류", reach:"중류 ~ 하류",
+      blurb:"중·하류에서 자주 보이는 흰 물새예요. 검은 부리·다리에 노란 발이 특징이며 물고기·개구리를 잡아먹습니다.", kw:["쇠백로","백로"] },
+    { id:"waegari", name:"왜가리", group:"조류", reach:"중류 ~ 하류",
+      blurb:"부산에서 겨울을 나는 텃새로 키가 90~100cm인 큰 회색 새예요. 물고기·개구리·쥐까지 먹습니다.", kw:["왜가리"] },
+    { id:"gamauji", name:"민물가마우지", group:"조류", reach:"하류(겨울철새)",
+      blurb:"겨울철새로 잠수를 잘해 2m 넘게 헤엄쳐 물고기를 잡아먹어요.", kw:["민물가마우지","가마우지"] },
+    { id:"soeori", name:"쇠오리", group:"조류", reach:"하류 기수역(겨울철새)",
+      blurb:"겨울에 하류 기수역을 찾는 작은 오리로, 수컷은 머리에 붉은색과 초록색 무늬가 있습니다.", kw:["쇠오리","오리"] },
+    { id:"sudal", name:"수달", group:"기타 생물", reach:"구서 ~ 온천역 일대",
+      blurb:"천연기념물 제330호이자 멸종위기 1급인 온천천의 최상위 포식자예요. 야행성으로 물고기를 주로 먹습니다. 2024년엔 새끼 3마리를 포함한 5마리 무리가 목격됐어요.", kw:["수달"] },
+    { id:"jara", name:"자라", group:"기타 생물", reach:"상류 남산동 일대",
+      blurb:"상류 남산동 일대에 살며 물속에서 아주 빠르게 헤엄쳐요. 무는 힘이 세니 함부로 만지면 안 됩니다.", kw:["자라"] },
+    { id:"dukkeobi", name:"두꺼비", group:"기타 생물", reach:"하류 연안교 인근",
+      blurb:"하류의 인공 연못에 많이 살아요. 낮엔 숨어 있다가 밤·비 올 때 나와 곤충을 잡아먹습니다.", kw:["두꺼비"] },
+    { id:"omgaeguri", name:"옴개구리", group:"기타 생물", reach:"상류 계곡",
+      blurb:"상류 계곡에 사는 약 5cm의 작은 개구리로, 몸에 오돌토돌한 돌기가 많습니다.", kw:["옴개구리","개구리"] }
+  ];
+
+  /* ---------- 지식기반: 일반/개요 ---------- */
+  var FACTS = [
+    { kw:["안녕","하이","반가","hello","hi","ㅎㅇ"], type:"greeting",
+      answer:"안녕하세요! 저는 온천천 AI 도우미예요. 🌿<br>온천천의 <b>물고기·물새·수달</b> 같은 수생생물이나 <b>역사</b>에 대해 물어보시면 아는 만큼 답해 드릴게요." },
+    { kw:["도움","무엇을물","뭐물어","뭘물어","기능","어떤걸물","무엇을할","도움말"], type:"help",
+      answer:"이런 걸 물어볼 수 있어요:<br>• \"수달은 어디 살아?\" 처럼 <b>특정 생물</b><br>• \"온천천에 무슨 물고기가 있어?\" 처럼 <b>생물 목록</b><br>• \"온천천 역사 알려줘\", \"국가하천 승격이 뭐야?\" 처럼 <b>역사</b><br>• \"수질은 어때?\", \"온천천은 어떤 하천이야?\" 같은 <b>개요</b>" },
+    { kw:["온천천은","온천천이뭐","온천천소개","어떤하천","금정산","수영강","발원","길이","하천연장"], type:"fact",
+      answer:"온천천은 <b>수영강의 제1지류</b>로, 금정산에서 발원해 하천 연장 약 13~14km를 흐르는 부산의 도심 하천이에요. 과거 심하게 오염됐지만 낙동강 물 유입과 복원 노력으로 되살아나 수달까지 돌아온 <b>대표적인 생태 복원 하천</b>입니다.",
+      link:{href:"온천천의_역사.html", label:"역사 타임라인 보기 →"} },
+    { kw:["수질","오염","bod","깨끗","맑","급수","죽은하천"], type:"fact",
+      answer:"온천천은 1994년 연안교 부근 수질이 <b>BOD 78.7ppm</b>까지 치솟아 '죽은 하천'으로 불렸어요. 이후 2005년 낙동강 물 유입 등으로 4급수 → 3급수(2007) → <b>2급수(2010)</b>까지 회복됐고, 저서생물도 31종이 확인됐습니다.",
+      link:{href:"온천천의_역사_상세.html?e=7", label:"수질 개선 이야기 →"} },
+    { kw:["국가하천","승격","3.79"], type:"fact",
+      answer:"2024년 2월, 온천천 하류 <b>3.79km 구간이 국가하천으로 승격</b>됐어요. 낙동강유역환경청이 직접 관리하게 됐고, 같은 해 9월엔 새끼 3마리를 포함한 <b>수달 5마리 무리</b>도 목격됐습니다.",
+      link:{href:"온천천의_역사_상세.html?e=11", label:"자세히 보기 →"} },
+    { kw:["복원","살리기","되살","자연형"], type:"fact",
+      answer:"1995년 시작된 <b>'온천천 살리기 운동'</b>으로 콘크리트를 걷어내고 자연형 하천으로 복원했어요(1999년 사직천 합류부 240m 등). 민관이 함께한 생태하천 복원의 대표 사례입니다.",
+      link:{href:"온천천의_역사_상세.html?e=5", label:"복원 운동 이야기 →"} }
+  ];
+
+  /* ---------- 유틸 ---------- */
+  function norm(s){ return (s||"").toLowerCase().replace(/\s+/g,"").replace(/[.,!?~·…"'()\-]/g,""); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  /* 종/사실/역사를 하나의 검색 대상으로 합침 */
+  function buildKB(){
+    var kb = [];
+    SPECIES.forEach(function(s){
+      var answer = "<b>"+s.name+"</b> · "+s.group+"<br>"+s.blurb+
+        "<br><span class=\"ans-meta\">서식 구간: "+s.reach+"</span>";
+      kb.push({ kw:s.kw, boost:0, answer:answer,
+        link:{href:"온천천의_수생생물.html", label:"수생생물 도감에서 보기 →"} });
+    });
+    FACTS.forEach(function(f){ kb.push({ kw:f.kw, boost:(f.type==="fact"?1:2), answer:f.answer, link:f.link }); });
+    // 역사 이벤트 (공용 데이터에서 생성)
+    var HIST_KW = {
+      0:["일제","강점기","동래온천","1907"], 1:["제방","1932"],
+      2:["산업화","도시화","1970","1980"], 3:["하천정비","기본계획","1989"],
+      4:["복개","죽은","1994"], 5:["살리기운동","마스터플랜","2001","2002"],
+      6:["1997"], 7:["수질개선","2005","2007","2010","저서생물"],
+      8:["복개복원","980","2011","2013"], 9:["재등장","2009","2017"],
+      10:["통합관리","협의회","2021"], 11:["국가하천승격","2024","3.79"]
+    };
+    (window.ONCHEON_HISTORY||[]).forEach(function(e,i){
+      kb.push({
+        kw:(HIST_KW[i]||[]).concat([e.title]),
+        boost:0,
+        answer:"<b>"+e.year+" · "+e.title+"</b><br>"+e.content,
+        link:{href:"온천천의_역사_상세.html?e="+i, label:"역사 상세 보기 →"}
+      });
+    });
+    return kb;
+  }
+  var KB = buildKB();
+
+  /* 목록형 의도 */
+  function listAnswer(q){
+    var groups = { "어류":[], "저서동물":[], "조류":[], "기타 생물":[] };
+    SPECIES.forEach(function(s){ groups[s.group].push(s.name); });
+    var html = "온천천에는 이런 수생생물들이 살아요 (도감 기준 17종):";
+    Object.keys(groups).forEach(function(g){
+      html += "<br>• <b>"+g+"</b> — "+groups[g].join(", ");
+    });
+    return { answer:html, link:{href:"온천천의_수생생물.html", label:"수생생물 도감 열기 →"} };
+  }
+
+  /* 지식기반 답변 찾기 */
+  function localAnswer(question){
+    var q = norm(question);
+    // 목록 의도 먼저
+    if(/(몇종|몇마리|종류|목록|리스트|어떤생물|무슨생물|무슨물고기|어떤물고기|뭐가살|뭐살|생물)/.test(q)){
+      return listAnswer(question);
+    }
+    var best=null, bestScore=0;
+    KB.forEach(function(item){
+      var sc=0;
+      item.kw.forEach(function(k){
+        var nk=norm(k); if(nk && q.indexOf(nk)>=0) sc += Math.min(nk.length,6);
+      });
+      if(sc>0) sc += (item.boost||0);
+      if(sc>bestScore){ bestScore=sc; best=item; }
+    });
+    if(best && bestScore>=2) return best;
+    return { answer:"음… 그 질문은 제가 가진 온천천 자료로는 답하기 어려워요. 😅<br>온천천의 <b>생물</b>(예: 수달, 버들치, 다슬기)이나 <b>역사</b>(예: 국가하천 승격, 수질 개선)에 대해 물어봐 주세요.", nomatch:true };
+  }
+
+  /* 하이브리드: 엔드포인트 있으면 진짜 AI 시도 → 실패 시 지식기반 */
+  function getAnswer(question){
+    if(AI_CONFIG.endpoint){
+      return fetch(AI_CONFIG.endpoint, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ question: question })
+      }).then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){
+          if(d && d.answer) return { answer: esc(d.answer).replace(/\n/g,"<br>") };
+          return localAnswer(question);
+        }).catch(function(){ return localAnswer(question); });
+    }
+    return Promise.resolve(localAnswer(question));
+  }
+
+  /* ---------- UI ---------- */
+  var chat = document.getElementById('chat');
+  function addMsg(who, html){
+    var m = document.createElement('div');
+    m.className = 'msg ' + who;
+    m.innerHTML = '<div class="av">'+(who==='bot'?'🌿':'🙋')+'</div><div class="bubble">'+html+'</div>';
+    chat.appendChild(m);
+    chat.scrollTop = chat.scrollHeight;
+    return m;
+  }
+  function answerHtml(res){
+    var html = res.answer;
+    if(res.link) html += '<br><a class="golink" href="'+res.link.href+'">'+res.link.label+'</a>';
+    return html;
+  }
+  function ask(question){
+    question = (question||"").trim();
+    if(!question) return;
+    addMsg('me', esc(question));
+    var typing = addMsg('bot', '<span class="typing"><span></span><span></span><span></span></span>');
+    getAnswer(question).then(function(res){
+      setTimeout(function(){
+        typing.querySelector('.bubble').innerHTML = answerHtml(res);
+        chat.scrollTop = chat.scrollHeight;
+      }, 380);
+    });
+  }
+
+  // 추천 질문 칩
+  var SUGGESTS = ["수달은 어디에 살아?","온천천에 무슨 물고기가 있어?","국가하천 승격이 뭐야?","온천천 수질은 어때?","버들치 알려줘"];
+  var sugWrap = document.getElementById('suggests');
+  SUGGESTS.forEach(function(s){
+    var b = document.createElement('button'); b.type='button'; b.textContent = s;
+    b.addEventListener('click', function(){ ask(s); });
+    sugWrap.appendChild(b);
+  });
+
+  document.getElementById('composer').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var input = document.getElementById('q');
+    ask(input.value); input.value='';
+  });
+
+  // 첫 인사
+  addMsg('bot', "안녕하세요! 저는 <b>온천천 AI 도우미</b>예요. 🌿<br>온천천의 수생생물과 역사에 대해 무엇이든 물어보세요. 아래 추천 질문을 눌러봐도 좋아요!");
+</script>
+</body>
+</html>
